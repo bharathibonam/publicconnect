@@ -1,0 +1,33 @@
+/* 
+ * JSP Theme Configuration
+ * Primary: #D32F2F
+ * Secondary: #B71C1C
+ * Accent: #FFFFFF
+ * Background: #F5F5F5
+ */
+
+:root {
+  --primary-color: #D32F2F;
+  --secondary-color: #B71C1C;
+  --accent-color: #FFFFFF;
+  --background-color: #F5F5F5;
+}
+
+body {
+  background-color: var(--background-color);
+}
+
+.primary-element {
+  color: var(--primary-color);
+  background-color: var(--primary-color);
+}
+
+.secondary-element {
+  color: var(--secondary-color);
+  background-color: var(--secondary-color);
+}
+
+.accent-element {
+  color: var(--accent-color);
+  background-color: var(--accent-color);
+}

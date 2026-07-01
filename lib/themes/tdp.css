@@ -1,0 +1,33 @@
+/* 
+ * TDP Theme Configuration
+ * Primary: #D4A017
+ * Secondary: #B8860B
+ * Accent: #005BAC
+ * Background: #FFFFFF
+ */
+
+:root {
+  --primary-color: #D4A017;
+  --secondary-color: #B8860B;
+  --accent-color: #005BAC;
+  --background-color: #FFFFFF;
+}
+
+body {
+  background-color: var(--background-color);
+}
+
+.primary-element {
+  color: var(--primary-color);
+  background-color: var(--primary-color);
+}
+
+.secondary-element {
+  color: var(--secondary-color);
+  background-color: var(--secondary-color);
+}
+
+.accent-element {
+  color: var(--accent-color);
+  background-color: var(--accent-color);
+}
