@@ -69,9 +69,9 @@ class _DynamicWelcomeScreenState extends State<DynamicWelcomeScreen> {
     
     final config = appState.appConfig ?? AppConfig(
       id: 'default',
-      politicianName: 'Jyoothula Nehru',
+      politicianName: 'G M Harish Balayogi',
       politicianRole: 'Member of the Legislative Assembly of Andhra Pradesh',
-      constituencyName: 'Jaggampeta',
+      constituencyName: 'Rajahmundry',
       partyLogoUrl: null,
       politicianImageUrl: null,
     );
@@ -264,27 +264,31 @@ class _DynamicWelcomeScreenState extends State<DynamicWelcomeScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    isTelugu ? '$nameText ' : nameText,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.secondary, 
-                    ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: isTelugu ? '$nameText ' : nameText,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.secondary, 
+                        ),
+                      ),
+                      TextSpan(
+                        text: isTelugu ? 'గారు' : ' Garu',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    isTelugu ? 'గారు' : ' Garu',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 8),
               Padding(

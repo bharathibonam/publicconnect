@@ -285,90 +285,161 @@ class _NewComplaintScreenState extends State<NewComplaintScreen> with TickerProv
       ),
       body: Form(
         key: _formKey,
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: activeParty.primaryColor),
-          ),
-          child: Stepper(
-            type: StepperType.horizontal,
-            elevation: 0,
-            currentStep: _currentStep,
-            onStepContinue: () {
-              if (_currentStep == 0 && _selectedCategoryKey == null) return;
-              if (_currentStep == 1 && (_selectedVillage == null || _wardNumberController.text.isEmpty)) return;
-              if (_currentStep == 2 && (_descriptionController.text.isEmpty || _pickedMediaBytes == null)) return;
-              
-              if (_currentStep < 3) {
-                setState(() => _currentStep += 1);
-              } else {
-                _submit();
-              }
-            },
-            onStepCancel: () {
-              if (_currentStep > 0) {
-                setState(() => _currentStep -= 1);
-              }
-            },
-            steps: [
-              Step(
-                title: const FittedBox(child: Text('Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10))),
-                isActive: _currentStep >= 0,
-                state: StepState.indexed,
-                content: _buildCategoryStep(activeParty),
-              ),
-              Step(
-                title: const FittedBox(child: Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10))),
-                isActive: _currentStep >= 1,
-                state: StepState.indexed,
-                content: _buildLocationStep(activeParty),
-              ),
-              Step(
-                title: const FittedBox(child: Text('Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10))),
-                isActive: _currentStep >= 2,
-                state: StepState.indexed,
-                content: _buildDetailsStep(activeParty),
-              ),
-              Step(
-                title: const FittedBox(child: Text('Submit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10))),
-                isActive: _currentStep >= 3,
-                state: StepState.indexed,
-                content: _buildSubmitStep(activeParty),
-              ),
-            ],
-            controlsBuilder: (context, details) {
-              return Padding(
-                padding: const EdgeInsets.only(top: 20, bottom: 80),
-                child: Row(
-                  children: [
-                    if (_currentStep < 3)
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: details.onStepContinue,
-                          style: ElevatedButton.styleFrom(backgroundColor: activeParty.primaryColor),
-                          child: const Text('CONTINUE', style: TextStyle(color: Colors.white)),
-                        ),
-                      ),
-                    if (_currentStep == 3)
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isSubmitting ? null : details.onStepContinue,
-                          style: ElevatedButton.styleFrom(backgroundColor: activeParty.primaryColor),
-                          child: _isSubmitting 
-                            ? const CircularProgressIndicator(color: Colors.white) 
-                            : const Text('SUBMIT COMPLAINT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    if (_currentStep > 0) ...[
-                      const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: details.onStepCancel,
-                        child: Text('BACK', style: TextStyle(color: activeParty.primaryColor)),
-                      ),
-                    ]
-                  ],
+        child: Column(
+          children: [
+            _buildCustomStepper(_currentStep, activeParty),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: KeyedSubtree(
+                  key: ValueKey<int>(_currentStep),
+                  child: _buildCurrentStep(activeParty),
                 ),
-              );
+              ),
+            ),
+            _buildBottomBar(activeParty),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentStep(PartyThemeConfig party) {
+    switch (_currentStep) {
+      case 0: return _buildCategoryStep(party);
+      case 1: return _buildLocationStep(party);
+      case 2: return _buildDetailsStep(party);
+      case 3: return _buildSubmitStep(party);
+      default: return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildCustomStepper(int currentStep, PartyThemeConfig party) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildStepItem(0, 'Category', currentStep, party),
+          _buildStepDivider(0, currentStep, party),
+          _buildStepItem(1, 'Location', currentStep, party),
+          _buildStepDivider(1, currentStep, party),
+          _buildStepItem(2, 'Details', currentStep, party),
+          _buildStepDivider(2, currentStep, party),
+          _buildStepItem(3, 'Submit', currentStep, party),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepItem(int stepIndex, String title, int currentStep, PartyThemeConfig party) {
+    final isCompleted = stepIndex < currentStep;
+    final isActive = stepIndex == currentStep;
+    final color = isCompleted || isActive ? const Color(0xFFEAB308) : Colors.grey.shade300;
+
+    return Column(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: isCompleted ? const Color(0xFF22C55E) : (isActive ? const Color(0xFFEAB308) : Colors.white),
+            shape: BoxShape.circle,
+            border: Border.all(color: isCompleted ? const Color(0xFF22C55E) : color, width: 2),
+          ),
+          child: Center(
+            child: isCompleted
+                ? const Icon(Icons.check, size: 16, color: Colors.white)
+                : Text('${stepIndex + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isActive ? Colors.white : Colors.grey)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(title, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: isActive ? const Color(0xFFEAB308) : Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildStepDivider(int stepIndex, int currentStep, PartyThemeConfig party) {
+    final isCompleted = stepIndex < currentStep;
+    return Expanded(
+      child: Container(
+        height: 2,
+        margin: const EdgeInsets.symmetric(horizontal: 4).copyWith(bottom: 24),
+        color: isCompleted ? const Color(0xFF22C55E) : Colors.grey.shade300,
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(PartyThemeConfig party) {
+    if (_currentStep == 3) {
+      return Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(16.0),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E), // Green for submit
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _isSubmitting 
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                : const Text('Submit Complaint', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+        ),
+      );
+    }
+
+    String nextText = '';
+    if (_currentStep == 0) nextText = 'Next: Location';
+    if (_currentStep == 1) nextText = 'Next: Details';
+    if (_currentStep == 2) nextText = 'Next: Review';
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: () {
+              if (_currentStep == 0 && _selectedCategoryKey == null) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a category')));
+                return;
+              }
+              if (_currentStep == 1 && (_selectedVillage == null || _wardNumberController.text.isEmpty)) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all location details')));
+                return;
+              }
+              if (_currentStep == 2 && (_descriptionController.text.isEmpty || _pickedMediaBytes == null)) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please provide description and evidence')));
+                return;
+              }
+              
+              setState(() => _currentStep += 1);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEAB308),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(nextText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ),
       ),
@@ -376,66 +447,81 @@ class _NewComplaintScreenState extends State<NewComplaintScreen> with TickerProv
   }
 
   Widget _buildCategoryStep(PartyThemeConfig party) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 0.85,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: _categoryKeys.length,
-      itemBuilder: (context, index) {
-        final key = _categoryKeys[index];
-        final isSelected = _selectedCategoryKey == key;
-        final categoryColor = CategoryMapping.getColorForCategory(key);
-        final categoryIcon = CategoryMapping.getIconForCategory(key);
-        
-        return GestureDetector(
-          onTap: () => setState(() => _selectedCategoryKey = key),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? categoryColor.withValues(alpha: 0.1) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected ? categoryColor : Colors.grey.shade200,
-                width: isSelected ? 2 : 1,
-              ),
-              boxShadow: isSelected 
-                  ? [BoxShadow(color: categoryColor.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))] 
-                  : [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Select Category', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 4),
+          const Text('Choose the category of your issue', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 24),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.9,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: categoryColor.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
+            itemCount: _categoryKeys.length,
+            itemBuilder: (context, index) {
+              final key = _categoryKeys[index];
+              final isSelected = _selectedCategoryKey == key;
+              final categoryColor = CategoryMapping.getColorForCategory(key);
+              final categoryIcon = CategoryMapping.getIconForCategory(key);
+              
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => setState(() => _selectedCategoryKey = key),
+                  borderRadius: BorderRadius.circular(20),
+                  splashColor: categoryColor.withValues(alpha: 0.1),
+                  highlightColor: categoryColor.withValues(alpha: 0.05),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? categoryColor.withValues(alpha: 0.05) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? categoryColor : Colors.transparent,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected ? categoryColor.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
+                          blurRadius: isSelected ? 12 : 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(categoryIcon, color: categoryColor, size: 32),
+                        const SizedBox(height: 12),
+                        Text(
+                          CategoryMapping.getLocalizedCategory(context, key),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            fontSize: 10,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Icon(categoryIcon, color: categoryColor, size: 28),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  key,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isSelected ? categoryColor : Colors.black87,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    fontSize: 11,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              );
+            },
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -444,144 +530,314 @@ class _NewComplaintScreenState extends State<NewComplaintScreen> with TickerProv
     List<String> panchayats = _selectedMandal != null ? MandalMapping.getPanchayatsForMandal(_selectedMandal!, Provider.of<AppState>(context, listen: false).uniquePanchayats) : [];
     List<String> villages = _selectedPanchayat != null ? MandalMapping.getVillagesForPanchayat(_selectedPanchayat!) : [];
 
-    return Column(
-      children: [
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Mandal', filled: true, fillColor: Colors.white),
-          initialValue: _selectedMandal,
-          items: mandals.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-          onChanged: (val) => setState(() { _selectedMandal = val; _selectedPanchayat = null; _selectedVillage = null; }),
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Panchayat', filled: true, fillColor: Colors.white),
-          initialValue: _selectedPanchayat,
-          items: panchayats.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-          onChanged: _selectedMandal == null ? null : (val) => setState(() { _selectedPanchayat = val; _selectedVillage = null; }),
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Village', filled: true, fillColor: Colors.white),
-          initialValue: _selectedVillage,
-          items: villages.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-          onChanged: _selectedPanchayat == null ? null : (val) => setState(() => _selectedVillage = val),
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _wardNumberController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Ward Number', filled: true, fillColor: Colors.white),
-        ),
-      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Select Location', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 4),
+          const Text('Confirm or adjust the location', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 24),
+          
+          Container(
+            height: 220,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.grey.shade100),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 6))],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: CustomMap(
+                complaints: const [],
+                isInteractiveSelection: true,
+                selectedLocation: _selectedLocation,
+                onLocationSelected: _onLocationPicked,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          ElevatedButton.icon(
+            onPressed: _useMyLocation,
+            icon: _isFetchingLocation 
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+              : const Icon(Icons.my_location, color: Colors.white, size: 20),
+            label: const Text('Use My Location', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6), // Blue
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              minimumSize: const Size(double.infinity, 48),
+              elevation: 0,
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          const Text('Location Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(height: 12),
+          
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Mandal', 
+                    filled: true, 
+                    fillColor: Colors.grey.shade50,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                  ),
+                  initialValue: _selectedMandal,
+                  items: mandals.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: (val) => setState(() { _selectedMandal = val; _selectedPanchayat = null; _selectedVillage = null; }),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Panchayat', 
+                    filled: true, 
+                    fillColor: Colors.grey.shade50,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                  ),
+                  initialValue: _selectedPanchayat,
+                  items: panchayats.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: _selectedMandal == null ? null : (val) => setState(() { _selectedPanchayat = val; _selectedVillage = null; }),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Village', 
+                    filled: true, 
+                    fillColor: Colors.grey.shade50,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                  ),
+                  initialValue: _selectedVillage,
+                  items: villages.map((v) => DropdownMenuItem(value: v, child: Text(v, style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: _selectedPanchayat == null ? null : (val) => setState(() => _selectedVillage = val),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _wardNumberController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Ward Number', 
+                    filled: true, 
+                    fillColor: Colors.grey.shade50,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildDetailsStep(PartyThemeConfig party) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Description', style: TextStyle(fontWeight: FontWeight.bold)),
-            IconButton(icon: Icon(Icons.mic, color: party.primaryColor), onPressed: _openVoiceDictation),
-          ],
-        ),
-        TextFormField(
-          controller: _descriptionController,
-          maxLines: 3,
-          decoration: const InputDecoration(hintText: 'Describe the issue...', filled: true, fillColor: Colors.white),
-        ),
-        const SizedBox(height: 24),
-        const Text('Evidence (Mandatory)', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: _showImageSourceSheet,
-          child: Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _pickedMediaBytes != null ? party.primaryColor : Colors.grey.shade400, width: 2),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Describe Your Issue', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 4),
+          const Text('You can speak or type your issue', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 24),
+          
+          Center(
+            child: GestureDetector(
+              onTap: _openVoiceDictation,
+              child: AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  return Container(
+                    width: 80 + (_pulseController.value * 12),
+                    height: 80 + (_pulseController.value * 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAB308),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFEAB308).withValues(alpha: 0.3 + (_pulseController.value * 0.2)),
+                          blurRadius: 16 + (_pulseController.value * 12),
+                          spreadRadius: _pulseController.value * 6,
+                          offset: const Offset(0, 8),
+                        )
+                      ],
+                    ),
+                    child: child,
+                  );
+                },
+                child: const Center(child: Icon(Icons.mic, color: Colors.white, size: 40)),
+              ),
             ),
-            child: _pickedMediaBytes != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: (_isVideoSelected || kIsWeb) ? const Icon(Icons.insert_drive_file, size: 50, color: Colors.grey) : Image.memory(_pickedMediaBytes!, fit: BoxFit.cover),
-                )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.camera_alt, size: 40, color: Colors.grey.shade400),
-                    const Text('Tap to capture photo/video', style: TextStyle(color: Colors.grey)),
-                  ],
+          ),
+          const SizedBox(height: 16),
+          const Center(child: Text('Tap to speak', style: TextStyle(color: Colors.grey, fontSize: 14))),
+          const SizedBox(height: 24),
+          
+          TextFormField(
+            controller: _descriptionController,
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Or type your issue here...', 
+              filled: true, 
+              fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          const Text('Add Photos (Optional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 12),
+          
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _showImageSourceSheet,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: const Center(child: Icon(Icons.camera_alt_outlined, color: Colors.grey)),
                 ),
+              ),
+              const SizedBox(width: 12),
+              if (_pickedMediaBytes != null)
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: (_isVideoSelected || kIsWeb) ? const Icon(Icons.videocam, color: Colors.grey) : Image.memory(_pickedMediaBytes!, fit: BoxFit.cover),
+                  ),
+                ),
+            ],
           ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('GPS Location', style: TextStyle(fontWeight: FontWeight.bold)),
-            TextButton.icon(
-              icon: _isFetchingLocation ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.my_location),
-              label: const Text('Fetch Location'),
-              onPressed: _useMyLocation,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          height: 150,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CustomMap(
-              complaints: const [],
-              isInteractiveSelection: true,
-              selectedLocation: _selectedLocation,
-              onLocationSelected: _onLocationPicked,
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildSubmitStep(PartyThemeConfig party) {
-    return Container(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: party.primaryColor.withValues(alpha: 0.3)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _summaryRow('Category', _selectedCategoryKey ?? 'Not selected'),
-          const Divider(),
-          _summaryRow('Location', '$_selectedVillage, ${_selectedPanchayat ?? ''}, ${_selectedMandal ?? ''}\nWard ${_wardNumberController.text}'),
-          const Divider(),
-          _summaryRow('GPS', _selectedLocation != null ? '${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}' : 'Not verified'),
-          const Divider(),
-          _summaryRow('Evidence', _pickedMediaBytes != null ? (_isVideoSelected ? 'Video attached' : 'Photo attached') : 'Missing!'),
+          const Text('Review & Submit', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 4),
+          const Text('Please review your complaint details', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 24),
+          
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.grey.shade100),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 6))],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _reviewItem(Icons.category, 'Category', _selectedCategoryKey != null ? CategoryMapping.getLocalizedCategory(context, _selectedCategoryKey!) : 'Not selected'),
+                const Divider(height: 24),
+                _reviewItem(Icons.location_on, 'Location', '$_selectedVillage, ${_selectedPanchayat ?? ''}, ${_selectedMandal ?? ''}\nWard ${_wardNumberController.text}'),
+                const Divider(height: 24),
+                _reviewItem(Icons.description, 'Description', _descriptionController.text.isNotEmpty ? _descriptionController.text : 'No description provided'),
+                const Divider(height: 24),
+                
+                Row(
+                  children: [
+                    const Icon(Icons.attachment, color: Colors.grey, size: 20),
+                    const SizedBox(width: 12),
+                    const Text('Attachments', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_pickedMediaBytes != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 32),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: 60,
+                        height: 60,
+                        child: (_isVideoSelected || kIsWeb) ? const Icon(Icons.videocam, color: Colors.grey) : Image.memory(_pickedMediaBytes!, fit: BoxFit.cover),
+                      ),
+                    ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.only(left: 32),
+                    child: Text('No attachments', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  ),
+                  
+                const Divider(height: 24),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time, color: Colors.grey, size: 20),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Reported On', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 2),
+                        const Text('Just now', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _summaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 80, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12))),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
-        ],
-      ),
+  Widget _reviewItem(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.grey, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

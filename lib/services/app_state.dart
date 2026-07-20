@@ -1633,6 +1633,49 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> forwardComplaint(String complaintId, String targetRole) async {
+    // Optimistic local update
+    final index = _complaints.indexWhere((c) => c.id == complaintId);
+    if (index != -1) {
+      final existing = _complaints[index];
+      final updated = Complaint(
+        id: existing.id,
+        userId: existing.userId,
+        citizenName: existing.citizenName,
+        citizenPhone: existing.citizenPhone,
+        category: existing.category,
+        description: existing.description,
+        latitude: existing.latitude,
+        longitude: existing.longitude,
+        wardId: existing.wardId,
+        wardName: existing.wardName,
+        villageName: existing.villageName,
+        assignedOfficerId: existing.assignedOfficerId,
+        address: existing.address,
+        imageUrl: existing.imageUrl,
+        resolvedImageUrl: existing.resolvedImageUrl,
+        status: existing.status,
+        priority: existing.priority,
+        createdAt: existing.createdAt,
+        resolvedAt: existing.resolvedAt,
+        deviceInfo: existing.deviceInfo,
+        feedbackRating: existing.feedbackRating,
+        isClosed: existing.isClosed,
+        isPushed: true,
+        pushedTo: targetRole,
+      );
+      _complaints[index] = updated;
+
+      final box = Hive.box('local_complaints');
+      await box.put(complaintId, updated.toMap());
+      notifyListeners();
+    }
+
+    if (isSupabaseConnected) {
+      await SupabaseService.forwardComplaint(complaintId, targetRole);
+    }
+  }
+
   Future<void> escalateComplaint(String complaintId, String targetRole) async {
     // Optimistic local update
     final index = _complaints.indexWhere((c) => c.id == complaintId);

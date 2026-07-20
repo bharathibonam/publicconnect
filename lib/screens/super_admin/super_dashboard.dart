@@ -270,78 +270,87 @@ class SuperDashboardTab extends StatelessWidget {
                   BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
                 ],
               ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Background Watermark: Party Logo
-                  if (themeConfig.logoUrl != null)
-                    Positioned(
-                      right: 15,
-                      bottom: 10,
-                      width: 120,
-                      height: 120,
-                      child: Opacity(
-                        opacity: 0.15,
-                        child: themeConfig.logoUrl!.startsWith('http')
-                            ? Image.network(themeConfig.logoUrl!, fit: BoxFit.contain)
-                            : Image.asset(themeConfig.logoUrl!, fit: BoxFit.contain),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Left Content Area: Welcome Text & Name
+                    Expanded(
+                      flex: 5,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            l10n.welcome,
+                            style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            l10n.welcomeGaru(themeConfig.getLocalizedMlaName(context)),
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.constituencySuffix(themeConfig.getLocalizedConstituencyName(context)),
+                            style: const TextStyle(color: Colors.black54, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
-
-                  // Right Content Area: MLA Photo
-                  Positioned(
-                    right: 10,
-                    bottom: 0,
-                    width: MediaQuery.of(context).size.width * 0.40,
-                    height: 140, // Match container height
-                    child: Transform.scale(
-                      scale: 1.3,
-                      alignment: Alignment.bottomCenter,
-                      child: (themeConfig.mlaPhotoUrl != null && themeConfig.mlaPhotoUrl!.isNotEmpty)
-                          ? (themeConfig.mlaPhotoUrl!.startsWith('http')
-                              ? Image.network(themeConfig.mlaPhotoUrl!, fit: BoxFit.contain, alignment: Alignment.bottomRight)
-                              : Image.asset(themeConfig.mlaPhotoUrl!, fit: BoxFit.contain, alignment: Alignment.bottomRight))
-                          : const SizedBox(),
                     ),
-                  ),
-
-                  // Left Content Area: Welcome Text & Name
-                  Positioned(
-                    left: 20,
-                    top: 25,
-                    bottom: 20,
-                    width: MediaQuery.of(context).size.width * 0.50,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          isTelugu ? 'స్వాగతం' : 'Welcome',
-                          style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w600),
+                    // Right Content Area: MLA Photo & Watermark
+                    Expanded(
+                      flex: 5,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            // Background Watermark: Party Logo
+                            if (themeConfig.id == 'tdp' && themeConfig.logoUrl != null)
+                              Positioned(
+                                right: 0,
+                                top: 10,
+                                width: 90,
+                                height: 90,
+                                child: Opacity(
+                                  opacity: 0.15,
+                                  child: themeConfig.logoUrl!.startsWith('http')
+                                      ? Image.network(themeConfig.logoUrl!, fit: BoxFit.contain)
+                                      : Image.asset(themeConfig.logoUrl!, fit: BoxFit.contain),
+                                ),
+                              ),
+                            // MLA Photo
+                            Positioned.fill(
+                              child: Align(
+                                alignment: Alignment.bottomRight,
+                                child: (themeConfig.mlaPhotoUrl != null && themeConfig.mlaPhotoUrl!.isNotEmpty)
+                                    ? (themeConfig.mlaPhotoUrl!.startsWith('http')
+                                        ? Image.network(themeConfig.mlaPhotoUrl!, fit: BoxFit.contain, alignment: Alignment.bottomRight)
+                                        : Image.asset(themeConfig.mlaPhotoUrl!, fit: BoxFit.contain, alignment: Alignment.bottomRight))
+                                    : const SizedBox(),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          isTelugu ? '${appState.currentUser?.name ?? themeConfig.mlaName} గారు' : '${appState.currentUser?.name ?? themeConfig.mlaName} Garu',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isTelugu ? '${themeConfig.constituencyName} నియోజకవర్గం' : '${themeConfig.constituencyName} Constituency',
-                          style: const TextStyle(color: Colors.black54, fontSize: 12),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -402,9 +411,9 @@ class SuperDashboardTab extends StatelessWidget {
                                         sectionsSpace: 2,
                                         centerSpaceRadius: 35,
                                         sections: [
-                                          PieChartSectionData(color: Colors.green, value: resolved.toDouble(), showTitle: false, radius: 15),
-                                          PieChartSectionData(color: Colors.orange, value: inReview.toDouble(), showTitle: false, radius: 15),
-                                          PieChartSectionData(color: Colors.red, value: pending.toDouble(), showTitle: false, radius: 15),
+                                          PieChartSectionData(color: themeConfig.chartColors.isNotEmpty ? themeConfig.chartColors[0] : Colors.green, value: resolved.toDouble(), showTitle: false, radius: 15),
+                                          PieChartSectionData(color: themeConfig.chartColors.length > 1 ? themeConfig.chartColors[1] : Colors.orange, value: inReview.toDouble(), showTitle: false, radius: 15),
+                                          PieChartSectionData(color: themeConfig.chartColors.length > 2 ? themeConfig.chartColors[2] : Colors.red, value: pending.toDouble(), showTitle: false, radius: 15),
                                         ],
                                       ),
                                     ),
@@ -432,7 +441,7 @@ class SuperDashboardTab extends StatelessWidget {
                         Expanded(child: Text(l10n.thisMonthTrend, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
                         GestureDetector(
                           onTap: () {}, // view all reports
-                          child: Text('View All', style: TextStyle(fontSize: 10, color: themeConfig.primaryColor)),
+                          child: Text(l10n.viewAll, style: TextStyle(fontSize: 10, color: themeConfig.primaryColor)),
                         )
                       ],
                     ),
@@ -498,7 +507,7 @@ class SuperDashboardTab extends StatelessWidget {
             // Recent Complaints
             SectionHeader(
               title: l10n.recentComplaints,
-              onViewAll: 'View All',
+              onViewAll: l10n.viewAll,
               onTapViewAll: () {
                 // navigate
               },
@@ -527,7 +536,7 @@ class SuperDashboardTab extends StatelessWidget {
             // Top Mandals
             SectionHeader(
               title: l10n.topMandals,
-              onViewAll: 'View All',
+              onViewAll: l10n.viewAll,
               onTapViewAll: () {},
             ),
             const SizedBox(height: 12),
@@ -560,7 +569,7 @@ class SuperDashboardTab extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Broadcast Section
-            SectionHeader(title: 'Broadcast'),
+            SectionHeader(title: l10n.broadcast),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -569,7 +578,7 @@ class SuperDashboardTab extends StatelessWidget {
                     onPressed: () => Navigator.push(context,
                         MaterialPageRoute(builder: (_) => const CreateAnnouncementScreen())),
                     icon: const Icon(Icons.campaign, size: 18),
-                    label: const Text('New Announcement'),
+                    label: Text(l10n.newAnnouncement),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: themeConfig.primaryColor,
                       foregroundColor: Colors.white,
@@ -584,7 +593,7 @@ class SuperDashboardTab extends StatelessWidget {
                     onPressed: () => Navigator.push(context,
                         MaterialPageRoute(builder: (_) => const BroadcastHistoryScreen())),
                     icon: const Icon(Icons.history, size: 18),
-                    label: const Text('Broadcast History'),
+                    label: Text(l10n.broadcastHistory),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: themeConfig.primaryColor,
@@ -685,7 +694,7 @@ class SuperReportsTab extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               icon: const Icon(Icons.download),
-              label: Text(appState.isTelugu ? 'ఎక్సెల్ షీట్ డౌన్‌లోడ్ చేయండి' : 'Generate Excel Sheet'),
+              label: Text(l10n.generateExcel),
               style: ElevatedButton.styleFrom(
                 backgroundColor: themeConfig.primaryColor,
                 foregroundColor: Colors.white,
@@ -694,7 +703,7 @@ class SuperReportsTab extends StatelessWidget {
               ),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(appState.isTelugu ? 'ఎక్సెల్ షీట్ డౌన్‌లోడ్ చేయబడుతోంది...' : 'Generating Excel Sheet...')),
+                  SnackBar(content: Text(l10n.generatingExcel)),
                 );
               },
             ),
@@ -733,11 +742,13 @@ class _SuperProfileTabState extends State<SuperProfileTab> {
       if (cloudUrl != null) {
         appState.updateUserProfile(user.name, user.phoneNumber, cloudUrl);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated successfully')));
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.profileUpdated)));
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload photo')));
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.photoUploadFailed)));
         }
       }
     }
@@ -747,6 +758,7 @@ class _SuperProfileTabState extends State<SuperProfileTab> {
   }
 
   void _showImageSourceActionSheet(BuildContext context, dynamic themeConfig) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -755,7 +767,7 @@ class _SuperProfileTabState extends State<SuperProfileTab> {
           children: [
             ListTile(
               leading: Icon(Icons.camera_alt, color: themeConfig.primaryColor),
-              title: const Text('Camera'),
+              title: Text(l10n.camera),
               onTap: () {
                 Navigator.pop(ctx);
                 _updateProfilePhoto(ImageSource.camera);
@@ -763,7 +775,7 @@ class _SuperProfileTabState extends State<SuperProfileTab> {
             ),
             ListTile(
               leading: Icon(Icons.photo_library, color: themeConfig.primaryColor),
-              title: const Text('Gallery'),
+              title: Text(l10n.gallery),
               onTap: () {
                 Navigator.pop(ctx);
                 _updateProfilePhoto(ImageSource.gallery);

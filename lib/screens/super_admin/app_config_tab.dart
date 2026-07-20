@@ -19,11 +19,16 @@ class _AppConfigTabState extends State<AppConfigTab> {
   final _formKey = GlobalKey<FormState>();
   
   final _nameController = TextEditingController();
+  final _nameTeController = TextEditingController();
   final _roleController = TextEditingController();
+  final _roleTeController = TextEditingController();
   final _constituencyController = TextEditingController();
+  final _constituencyTeController = TextEditingController();
   
   String? _partyLogoUrl;
+  XFile? _partyLogoFile;
   String? _politicianImageUrl;
+  XFile? _politicianImageFile;
   bool _isLoading = false;
 
   @override
@@ -37,24 +42,35 @@ class _AppConfigTabState extends State<AppConfigTab> {
     final config = appState.appConfig;
     if (config != null) {
       _nameController.text = config.politicianName;
+      _nameTeController.text = config.politicianNameTe ?? '';
       _roleController.text = config.politicianRole;
+      _roleTeController.text = config.politicianRoleTe ?? '';
       _constituencyController.text = config.constituencyName;
+      _constituencyTeController.text = config.constituencyNameTe ?? '';
       _partyLogoUrl = config.partyLogoUrl;
       _politicianImageUrl = config.politicianImageUrl;
     } else {
       _nameController.clear();
+      _nameTeController.clear();
       _roleController.clear();
+      _roleTeController.clear();
       _constituencyController.clear();
+      _constituencyTeController.clear();
       _partyLogoUrl = null;
+      _partyLogoFile = null;
       _politicianImageUrl = null;
+      _politicianImageFile = null;
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _nameTeController.dispose();
     _roleController.dispose();
+    _roleTeController.dispose();
     _constituencyController.dispose();
+    _constituencyTeController.dispose();
     super.dispose();
   }
 
@@ -65,8 +81,10 @@ class _AppConfigTabState extends State<AppConfigTab> {
       setState(() {
         if (isPartyLogo) {
           _partyLogoUrl = pickedFile.path;
+          _partyLogoFile = pickedFile;
         } else {
           _politicianImageUrl = pickedFile.path;
+          _politicianImageFile = pickedFile;
         }
       });
     }
@@ -82,35 +100,34 @@ class _AppConfigTabState extends State<AppConfigTab> {
       String? finalPoliticianUrl = _politicianImageUrl;
 
       try {
-        if (_partyLogoUrl != null && !_partyLogoUrl!.startsWith('http')) {
-          final file = File(_partyLogoUrl!);
-          if (file.existsSync()) {
-            final url = await SupabaseService.uploadAppAssetImage(file, '${themeProvider.activeParty.id}_party_logo');
-            if (url != null) {
-              finalPartyLogoUrl = url;
-            } else {
-              finalPartyLogoUrl = appState.appConfig?.partyLogoUrl;
-            }
+        if (_partyLogoFile != null) {
+          final bytes = await _partyLogoFile!.readAsBytes();
+          final url = await SupabaseService.uploadAppAssetImageBytes(bytes, '${themeProvider.activeParty.id}_party_logo');
+          if (url != null) {
+            finalPartyLogoUrl = url;
+          } else {
+            finalPartyLogoUrl = appState.appConfig?.partyLogoUrl;
           }
         }
 
-        if (_politicianImageUrl != null && !_politicianImageUrl!.startsWith('http')) {
-          final file = File(_politicianImageUrl!);
-          if (file.existsSync()) {
-            final url = await SupabaseService.uploadAppAssetImage(file, '${themeProvider.activeParty.id}_politician_image');
-            if (url != null) {
-              finalPoliticianUrl = url;
-            } else {
-              finalPoliticianUrl = appState.appConfig?.politicianImageUrl;
-            }
+        if (_politicianImageFile != null) {
+          final bytes = await _politicianImageFile!.readAsBytes();
+          final url = await SupabaseService.uploadAppAssetImageBytes(bytes, '${themeProvider.activeParty.id}_politician_image');
+          if (url != null) {
+            finalPoliticianUrl = url;
+          } else {
+            finalPoliticianUrl = appState.appConfig?.politicianImageUrl;
           }
         }
 
         final newConfig = AppConfig(
           id: themeProvider.activeParty.id,
           politicianName: _nameController.text.trim(),
+          politicianNameTe: _nameTeController.text.trim(),
           politicianRole: _roleController.text.trim(),
+          politicianRoleTe: _roleTeController.text.trim(),
           constituencyName: _constituencyController.text.trim(),
+          constituencyNameTe: _constituencyTeController.text.trim(),
           partyLogoUrl: finalPartyLogoUrl,
           politicianImageUrl: finalPoliticianUrl,
         );
@@ -159,7 +176,7 @@ class _AppConfigTabState extends State<AppConfigTab> {
                 // Party Toggle
                 Consumer<ThemeProvider>(
                   builder: (context, themeProvider, child) {
-                    final isTdp = themeProvider.activeParty.id == 'tdp';
+                    final activeId = themeProvider.activeParty.id;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(
@@ -169,16 +186,17 @@ class _AppConfigTabState extends State<AppConfigTab> {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
+                        children: ['tdp', 'jsp', 'bjp'].map((partyId) {
+                          final isActive = activeId == partyId;
+                          return GestureDetector(
                             onTap: () async {
-                              if (isTdp) return;
+                              if (isActive) return;
                               // Instantly update theme
-                              themeProvider.setActiveParty('tdp');
+                              themeProvider.setActiveParty(partyId);
                               
                               // Fetch config without full-screen loading
                               final appState = Provider.of<AppState>(context, listen: false);
-                              await appState.reloadAppConfigForParty('tdp');
+                              await appState.reloadAppConfigForParty(partyId);
                               if (mounted) {
                                 _loadCurrentConfig();
                                 setState(() {}); // Trigger rebuild just for text fields if needed
@@ -187,50 +205,20 @@ class _AppConfigTabState extends State<AppConfigTab> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isTdp ? Theme.of(context).primaryColor : Colors.transparent,
+                                color: isActive ? Theme.of(context).primaryColor : Colors.transparent,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                'TDP',
+                                partyId.toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: isTdp ? Colors.white : Colors.grey.shade700,
+                                  color: isActive ? Colors.white : Colors.grey.shade700,
                                 ),
                               ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () async {
-                              if (!isTdp) return;
-                              // Instantly update theme
-                              themeProvider.setActiveParty('jsp');
-                              
-                              // Fetch config without full-screen loading
-                              final appState = Provider.of<AppState>(context, listen: false);
-                              await appState.reloadAppConfigForParty('jsp');
-                              if (mounted) {
-                                _loadCurrentConfig();
-                                setState(() {}); // Trigger rebuild just for text fields if needed
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: !isTdp ? Theme.of(context).primaryColor : Colors.transparent,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'JSP',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: !isTdp ? Colors.white : Colors.grey.shade700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                          );
+                        }).toList(),
                       ),
                     );
                   },
@@ -245,7 +233,7 @@ class _AppConfigTabState extends State<AppConfigTab> {
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: isTelugu ? 'రాజకీయ నాయకుడి పేరు' : 'Politician Name',
+                    labelText: isTelugu ? 'రాజకీయ నాయకుడి పేరు (English)' : 'Politician Name (English)',
                     border: const OutlineInputBorder(),
                   ),
                   validator: (v) => v!.isEmpty ? 'Required' : null,
@@ -253,9 +241,18 @@ class _AppConfigTabState extends State<AppConfigTab> {
                 const SizedBox(height: 16),
                 
                 TextFormField(
+                  controller: _nameTeController,
+                  decoration: InputDecoration(
+                    labelText: isTelugu ? 'రాజకీయ నాయకుడి పేరు (Telugu)' : 'Politician Name (Telugu)',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                TextFormField(
                   controller: _roleController,
                   decoration: InputDecoration(
-                    labelText: isTelugu ? 'హోదా / పార్టీ' : 'Role / Party (e.g. TDP MLA)',
+                    labelText: isTelugu ? 'హోదా / పార్టీ (English)' : 'Role / Party (English)',
                     border: const OutlineInputBorder(),
                   ),
                   validator: (v) => v!.isEmpty ? 'Required' : null,
@@ -263,12 +260,30 @@ class _AppConfigTabState extends State<AppConfigTab> {
                 const SizedBox(height: 16),
 
                 TextFormField(
+                  controller: _roleTeController,
+                  decoration: InputDecoration(
+                    labelText: isTelugu ? 'హోదా / పార్టీ (Telugu)' : 'Role / Party (Telugu)',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
                   controller: _constituencyController,
                   decoration: InputDecoration(
-                    labelText: isTelugu ? 'నియోజకవర్గం' : 'Constituency',
+                    labelText: isTelugu ? 'నియోజకవర్గం (English)' : 'Constituency (English)',
                     border: const OutlineInputBorder(),
                   ),
                   validator: (v) => v!.isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: _constituencyTeController,
+                  decoration: InputDecoration(
+                    labelText: isTelugu ? 'నియోజకవర్గం (Telugu)' : 'Constituency (Telugu)',
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 24),
 

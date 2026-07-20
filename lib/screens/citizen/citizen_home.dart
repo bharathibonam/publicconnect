@@ -14,6 +14,8 @@ import '../announcements/announcement_list_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'my_ward_screen.dart';
+import 'citizen_services_screen.dart';
+import 'welfare_schemes_screen.dart';
 
 class CitizenHome extends StatelessWidget {
   final VoidCallback onFileComplaintPressed;
@@ -59,23 +61,20 @@ class CitizenHome extends StatelessWidget {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            _buildHeroBanner(context, activeParty, appState, loc),
+            _buildAppBar(context, activeParty, appState, loc),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStatisticsSection(total, resolved, pending, 1250, loc),
-                    const SizedBox(height: 28),
-                    
-                    _buildSectionTitle(loc.quickServices, activeParty),
-                    const SizedBox(height: 16),
-                    _buildQuickServicesGrid(context, loc, activeParty),
+                    _buildHeroCard(context, activeParty, appState, loc),
+                    const SizedBox(height: 24),
+                    _buildStatisticsSection(context, total, resolved, pending, 12450, loc),
                     const SizedBox(height: 28),
                     
                     if (filteredWorkUpdates.isNotEmpty) ...[
-                      _buildSectionTitle(appState.isTelugu ? 'పూర్తయిన పనులు' : 'Work Updates', activeParty),
+                      _buildSectionTitle(appState.isTelugu ? 'పూర్తయిన పనులు' : 'Development Works', activeParty),
                       const SizedBox(height: 16),
                       _buildWorkUpdatesList(filteredWorkUpdates, activeParty, appState.isTelugu),
                       const SizedBox(height: 28),
@@ -121,6 +120,46 @@ class CitizenHome extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('AI Assistant coming soon')));
+        },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(Icons.smart_toy, color: Colors.white, size: 28),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: CircleAvatar(
+                  radius: 4,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -155,78 +194,23 @@ class CitizenHome extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroBanner(BuildContext context, PartyThemeConfig party, AppState appState, AppLocalizations loc) {
-    Color gradientEnd = party.id == 'tdp' ? const Color(0xFFFFD54F) : party.secondaryColor;
-
+  Widget _buildAppBar(BuildContext context, PartyThemeConfig party, AppState appState, AppLocalizations loc) {
     return SliverAppBar(
-      expandedHeight: 310.0,
+      expandedHeight: kToolbarHeight,
       floating: false,
       pinned: true,
-      backgroundColor: party.primaryColor,
-      elevation: 4,
-      shadowColor: Colors.black.withValues(alpha: 0.3),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
-      ),
-      actions: [
-        const NotificationBell(),
-        // Language Toggle
-        Container(
-          margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
-          decoration: BoxDecoration(
-            color: party.primaryColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GestureDetector(
-                onTap: () => appState.setLanguage(false),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  height: 40,
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: !appState.isTelugu ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'English',
-                    style: TextStyle(
-                      color: !appState.isTelugu ? party.primaryColor : Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () => appState.setLanguage(true),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  height: 40,
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: appState.isTelugu ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'తెలుగు',
-                    style: TextStyle(
-                      color: appState.isTelugu ? party.primaryColor : Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [party.primaryColor, party.secondaryColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
-      ],
+      ),
+      leadingWidth: 56,
       leading: GestureDetector(
         onTap: onGoToProfile,
         child: Padding(
@@ -245,140 +229,213 @@ class CitizenHome extends StatelessWidget {
           ),
         ),
       ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [party.primaryColor, gradientEnd],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      titleSpacing: 8,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            loc.home,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
-            borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
           ),
-          child: Stack(
-            clipBehavior: Clip.none,
+          Text(
+            '${party.getLocalizedConstituencyName(context)} ${loc.constituency}',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        const NotificationBell(color: Colors.white),
+        // Language Toggle
+        Container(
+          margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Subtle background pattern
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.05,
-                  child: GridPaper(
-                    color: Colors.white,
-                    interval: 60,
-                    divisions: 1,
-                    subdivisions: 1,
+              GestureDetector(
+                onTap: () => appState.setLanguage(false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 40,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: !appState.isTelugu ? Colors.white : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'English',
+                    style: TextStyle(
+                      color: !appState.isTelugu ? party.primaryColor : Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-              
-              // Removed Live Badge as requested
-              
-              // Main Content Layout
-              Positioned.fill(
-                child: Stack(
-                  clipBehavior: Clip.none,
+              GestureDetector(
+                onTap: () => appState.setLanguage(true),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 40,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: appState.isTelugu ? Colors.white : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'తెలుగు',
+                    style: TextStyle(
+                      color: appState.isTelugu ? party.primaryColor : Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeroCard(BuildContext context, PartyThemeConfig party, AppState appState, AppLocalizations loc) {
+    return Container(
+      width: double.infinity,
+      height: 150, // Slightly taller to fit all citizen text
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [party.primaryColor, party.primaryColor.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Left Content Area
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Left Content Area (60%)
-                    Positioned(
-                      left: 20,
-                      bottom: 20,
-                      top: 65, // Shifted upward by 25px to balance layout and fix bottom overflow
-                      width: MediaQuery.of(context).size.width * 0.58,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start, // Start from the top
-                        children: [
-                          // Small TDP Logo Above Party Name
-                          SizedBox(
-                            height: 45, // Small and clean 40-50px
-                            child: _buildDynamicImage(party.logoUrl, true, alignment: Alignment.centerLeft),
+                    // Small Party Logo Above Party Name
+                    SizedBox(
+                      height: 20, 
+                      child: _buildDynamicImage(party.logoUrl, true, alignment: Alignment.centerLeft),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      party.getLocalizedPartyName(context), 
+                      style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      party.getLocalizedMlaName(context),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${party.getLocalizedConstituencyName(context)} ${loc.constituency}',
+                          style: TextStyle(
+                            color: party.primaryColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            party.id == 'tdp' ? loc.partyNameTdp : loc.partyNameJsp, 
-                            style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            party.id == 'tdp' ? loc.mlaNameTdp : loc.mlaNameJsp,
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '${party.id == 'tdp' ? loc.constituencyNameTdp : loc.constituencyNameJsp} ${loc.constituency}',
-                                style: const TextStyle(
-                                  color: Color(0xFFC8102E), // Highlighted in red
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            loc.tagline,
-                            style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            loc.appName,
-                            style: const TextStyle(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                    // Background Watermark: TDP Party Logo
-                    if (party.id == 'tdp')
+                    const SizedBox(height: 6),
+                    Text(
+                      loc.tagline,
+                      style: const TextStyle(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      loc.appName,
+                      style: const TextStyle(color: Colors.black87, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Right Content Area: MLA Photo & Watermark
+            Expanded(
+              flex: 5,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    // Background Watermark: Party Logo
+                    if (party.id == 'tdp' && party.logoUrl != null)
                       Positioned(
-                        right: MediaQuery.of(context).size.width * 0.15, // Positioned centrally behind MLA
-                        bottom: 20,
-                        width: 150,
-                        height: 150,
+                        right: 0,
+                        top: 10,
+                        width: 90,
+                        height: 90,
                         child: Opacity(
-                          opacity: 0.15, // Subtle watermark effect
+                          opacity: 0.15,
                           child: _buildDynamicImage(party.logoUrl, true, alignment: Alignment.center),
                         ),
                       ),
-
-                    // Right Content Area: MLA Photo
-                    Positioned(
-                      right: party.id == 'tdp' ? -35 : -75, // TDP moved slightly left, JSP uses original
-                      bottom: 0,
-                      width: MediaQuery.of(context).size.width * (party.id == 'tdp' ? 0.45 : 0.40),
-                      height: 180, 
-                      child: Transform.scale(
-                        scale: 2.3, 
+                    // MLA Photo
+                    Positioned.fill(
+                      child: Align(
                         alignment: Alignment.bottomRight,
-                        child: _buildDynamicImage(party.mlaPhotoUrl, false, alignment: Alignment.bottomRight), 
+                        child: _buildDynamicImage(party.mlaPhotoUrl, false, alignment: Alignment.bottomRight),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -396,54 +453,58 @@ class CitizenHome extends StatelessWidget {
     );
   }
 
-  Widget _buildStatisticsSection(int total, int resolved, int pending, int served, AppLocalizations loc) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return GridView.count(
-          padding: EdgeInsets.zero,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: constraints.maxWidth > 600 ? 4 : 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.4, // Responsive scaling
+  Widget _buildStatisticsSection(BuildContext context, int total, int resolved, int pending, int served, AppLocalizations loc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildQuickServicesGrid(context, loc, Provider.of<ThemeProvider>(context, listen: false).activeParty),
+        const SizedBox(height: 28),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildStatCard(loc.citizensServed, served.toString(), Icons.groups, const Color(0xFF22C55E)),
-            _buildStatCard(loc.totalComplaints, total.toString(), Icons.analytics, const Color(0xFF2563EB)),
-            _buildStatCard(loc.pending, pending.toString(), Icons.hourglass_empty, const Color(0xFFF59E0B)),
-            _buildStatCard(loc.resolved, resolved.toString(), Icons.check_circle, const Color(0xFF22C55E)),
+            const Text(
+              'Constituency Overview',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.black87,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const Text(
+              'Updated just now',
+              style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w600),
+            ),
           ],
-        );
-      }
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildStatItem('Citizens', served.toString(), const Color(0xFF22C55E)),
+            _buildStatItem('Complaints Today', '128', const Color(0xFF3B82F6)),
+            _buildStatItem('Resolved Today', '96', const Color(0xFF22C55E)),
+            _buildStatItem('Pending', pending.toString(), const Color(0xFFF97316)),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _buildStatCard(String title, String count, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
+  Widget _buildStatItem(String title, String count, Color color) {
+    return Expanded(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            count,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
-          ),
-          const SizedBox(height: 2),
           Text(
             title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black54),
             maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            count,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
           ),
         ],
       ),
@@ -454,68 +515,95 @@ class CitizenHome extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final unreadAnnouncementsCount = appState.notifications.where((n) => n.isAnnouncementNotification && !n.isRead).length;
 
-    final isJsp = party.id == 'jsp';
     final services = [
-      {'icon': Icons.assignment, 'label': loc.fileComplaint, 'color': isJsp ? party.primaryColor : const Color(0xFFF97316), 'onTap': onFileComplaintPressed},
-      {'icon': isJsp ? Icons.description : Icons.my_location, 'label': loc.trackStatus, 'color': isJsp ? const Color(0xFF3B82F6) : const Color(0xFF3B82F6), 'onTap': onTrackComplaintsPressed},
-      {'icon': Icons.campaign, 'label': loc.announcements, 'color': isJsp ? party.primaryColor : const Color(0xFFEF4444), 'onTap': () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const AnnouncementListScreen()));
+      {'icon': Icons.assignment, 'label': loc.fileComplaint, 'color': const Color(0xFFF97316), 'bg': const Color(0xFFFFF7ED), 'onTap': onFileComplaintPressed},
+      {'icon': Icons.mic, 'label': loc.voiceComplaint, 'color': const Color(0xFF3B82F6), 'bg': const Color(0xFFEFF6FF), 'onTap': () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon'))); }},
+      {'icon': Icons.account_balance, 'label': loc.myWard, 'color': const Color(0xFF8B5CF6), 'bg': const Color(0xFFF5F3FF), 'onTap': () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWardScreen()));
       }},
-      {'icon': isJsp ? Icons.work : Icons.work_outline, 'label': loc.jobs, 'color': isJsp ? party.primaryColor : const Color(0xFF22C55E), 'onTap': () {
+      {'icon': Icons.track_changes, 'label': loc.trackComplaint, 'color': const Color(0xFF8B5CF6), 'bg': const Color(0xFFF5F3FF), 'onTap': onTrackComplaintsPressed},
+      {'icon': Icons.location_city, 'label': loc.services, 'color': const Color(0xFF06B6D4), 'bg': const Color(0xFFECFEFF), 'onTap': () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CitizenServicesScreen()));
+      }},
+      {'icon': Icons.people, 'label': loc.welfareSchemes, 'color': const Color(0xFFEC4899), 'bg': const Color(0xFFFDF2F8), 'onTap': () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const WelfareSchemesScreen()));
+      }},
+      {'icon': Icons.work, 'label': loc.jobs, 'color': const Color(0xFF3B82F6), 'bg': const Color(0xFFEFF6FF), 'onTap': () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsScreen()));
       }},
-      {'icon': isJsp ? Icons.account_balance : Icons.location_city, 'label': loc.myWard, 'color': isJsp ? const Color(0xFF1E3A8A) : const Color(0xFF6366F1), 'onTap': () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWardScreen()));
+      {'icon': Icons.campaign, 'label': loc.announcements, 'color': const Color(0xFFEF4444), 'bg': const Color(0xFFFEF2F2), 'onTap': () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const AnnouncementListScreen()));
       }},
     ];
 
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.9,
-      ),
-      itemCount: services.length,
-      itemBuilder: (context, index) {
-        final service = services[index];
-        return GestureDetector(
-          onTap: service['onTap'] as VoidCallback,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3)),
-                  ],
-                ),
-                child: service['label'] == loc.announcements && unreadAnnouncementsCount > 0
-                    ? Badge(
-                        label: Text(unreadAnnouncementsCount.toString()),
-                        child: Icon(service['icon'] as IconData, color: service['color'] as Color, size: 28),
-                      )
-                    : Icon(service['icon'] as IconData, color: service['color'] as Color, size: 28),
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              loc.quickServices,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.black87,
+                letterSpacing: 0.5,
               ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: Text(
-                  service['label'] as String,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              )
-            ],
+            ),
+            Text(
+              loc.viewAll,
+              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 16,
+            childAspectRatio: 0.75,
           ),
-        );
-      },
+          itemCount: services.length,
+          itemBuilder: (context, index) {
+            final service = services[index];
+            return GestureDetector(
+              onTap: service['onTap'] as VoidCallback,
+              child: Column(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: service['bg'] as Color,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: service['label'] == loc.announcements && unreadAnnouncementsCount > 0
+                        ? Badge(
+                            label: Text(unreadAnnouncementsCount.toString()),
+                            child: Icon(service['icon'] as IconData, color: service['color'] as Color, size: 24),
+                          )
+                        : Icon(service['icon'] as IconData, color: service['color'] as Color, size: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Text(
+                      service['label'] as String,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87, height: 1.2),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 

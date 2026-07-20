@@ -24,7 +24,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get avgResolutionTime => 'సగటు పరిష్కార సమయం';
 
   @override
-  String get broadcast => 'బ్రాడ్‌కాస్ట్';
+  String get broadcast => 'ప్రసారాలు';
 
   @override
   String get broadcastSection => 'బ్రాడ్‌కాస్ట్ హెచ్చరిక';
@@ -72,7 +72,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get constituencyNameJsp => 'పిఠాపురం';
 
   @override
-  String get constituencyNameTdp => 'జగ్గంపేట';
+  String get constituencyNameTdp => 'రాజమండ్రి';
 
   @override
   String get constituencyOffice => 'నియోజకవర్గ కార్యాలయం';
@@ -150,7 +150,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get mlaNameJsp => 'పవన్ కళ్యాణ్';
 
   @override
-  String get mlaNameTdp => 'జ్యోతుల నెహ్రూ';
+  String get mlaNameTdp => 'గంటి హరిష్ మధుర్';
 
   @override
   String get myDepartmentSummary => 'నా శాఖ సారాంశం';
@@ -282,8 +282,234 @@ class AppLocalizationsTe extends AppLocalizations {
   String get wardMemberDashboard => 'వార్డు సభ్యుల డాష్‌బోర్డ్';
 
   @override
+  String get wardOfficer => 'వార్డు అధికారి';
+
+  @override
+  String get wardMembers => 'వార్డు సభ్యులు';
+
+  @override
+  String get welcome => 'స్వాగతం';
+
+  @override
+  String welcomeGaru(Object name) {
+    return '$name గారు';
+  }
+
+  @override
+  String constituencySuffix(Object name) {
+    return '$name నియోజకవర్గం';
+  }
+
+  @override
+  String get newAnnouncement => 'కొత్త ప్రకటన';
+
+  @override
+  String get broadcastHistory => 'ప్రసార చరిత్ర';
+
+  @override
+  String get profileUpdated => 'ప్రొఫైల్ ఫోటో విజయవంతంగా నవీకరించబడింది';
+
+  @override
+  String get photoUploadFailed => 'ఫోటో అప్‌లోడ్ చేయడంలో విఫలమైంది';
+
+  @override
+  String get camera => 'కెమెరా';
+
+  @override
+  String get gallery => 'గ్యాలరీ';
+
+  @override
+  String get generateExcel => 'ఎక్సెల్ షీట్ డౌన్‌లోడ్ చేయండి';
+
+  @override
+  String get generatingExcel => 'ఎక్సెల్ షీట్ డౌన్‌లోడ్ చేయబడుతోంది...';
+
+  @override
   String get wardSummary => 'వార్డు సారాంశం';
 
   @override
   String get whatsappSupport => 'వాట్సాప్ మద్దతు';
+
+  @override
+  String get catWaterSupply => 'తాగునీరు';
+
+  @override
+  String get catElectricity => 'విద్యుత్';
+
+  @override
+  String get catRoads => 'రహదారులు & మౌలిక సదుపాయాలు';
+
+  @override
+  String get catAgriculture => 'వ్యవసాయం';
+
+  @override
+  String get catHealth => 'ఆరోగ్యం';
+
+  @override
+  String get catSanitation => 'పారిశుద్ధ్యం';
+
+  @override
+  String get catRevenue => 'రెవెన్యూ & ధృవీకరణ పత్రాలు';
+
+  @override
+  String get catWomenChild => 'మహిళా & శిశు సంక్షేమం';
+
+  @override
+  String get catEducation => 'విద్య';
+
+  @override
+  String get catOther => 'ఇతర సమస్యలు';
+
+  @override
+  String get mlaNameBjp => 'దగ్గుబాటి పురందేశ్వరి';
+
+  @override
+  String get constituencyNameBjp => 'రాజమహేంద్రవరం';
+
+  @override
+  String get partyNameBjp => 'బీజేపీ';
+
+  @override
+  String get voiceComplaint => 'వాయిస్ ఫిర్యాదు';
+
+  @override
+  String get trackComplaint => 'ఫిర్యాదు ట్రాక్ చేయండి';
+
+  @override
+  String get services => 'సేవలు';
+
+  @override
+  String get welfareSchemes => 'సంక్షేమ పథకాలు';
+
+  @override
+  String get emergencyServices => 'అత్యవసర సేవలు';
+
+  @override
+  String get developmentWorks => 'అభివృద్ధి పనులు';
+
+  @override
+  String get schools => 'పాఠశాలలు';
+
+  @override
+  String get juniorColleges => 'జూనియర్ కళాశాలలు';
+
+  @override
+  String get degreeColleges => 'డిగ్రీ కళాశాలలు';
+
+  @override
+  String get polytechnicColleges => 'పాలిటెక్నిక్ కళాశాలలు';
+
+  @override
+  String get itiColleges => 'ఐటీఐ కళాశాలలు';
+
+  @override
+  String get govHospitals => 'ప్రభుత్వ ఆసుపత్రులు';
+
+  @override
+  String get pvtHospitals => 'ప్రైవేట్ ఆసుపత్రులు';
+
+  @override
+  String get policeStations => 'పోలీస్ స్టేషన్లు';
+
+  @override
+  String get fireStations => 'అగ్నిమాపక కేంద్రాలు';
+
+  @override
+  String get municipalOffice => 'మున్సిపల్ కార్యాలయం';
+
+  @override
+  String get meesevaCentres => 'మీ సేవ కేంద్రాలు';
+
+  @override
+  String get libraries => 'గ్రంథాలయాలు';
+
+  @override
+  String get publicParks => 'ప్రజా ఉద్యానవనాలు';
+
+  @override
+  String get busStations => 'బస్ స్టేషన్లు';
+
+  @override
+  String get railwayInfo => 'రైల్వే సమాచారం';
+
+  @override
+  String get otherPublicServices => 'ఇతర ప్రజా సేవలు';
+
+  @override
+  String get phc => 'ప్రాథమిక ఆరోగ్య కేంద్రాలు';
+
+  @override
+  String get chc => 'సామాజిక ఆరోగ్య కేంద్రాలు';
+
+  @override
+  String get vetHospitals => 'పశువైద్యశాలలు';
+
+  @override
+  String get anganwadi => 'అంగన్‌వాడీ కేంద్రాలు';
+
+  @override
+  String get banks => 'బ్యాంకులు & ఆర్థిక కేంద్రాలు';
+
+  @override
+  String get postOffices => 'పోస్టాఫీసులు';
+
+  @override
+  String get govOffices => 'ప్రభుత్వ కార్యాలయాలు';
+
+  @override
+  String get rationShops => 'రేషన్ దుకాణాలు (PDS)';
+
+  @override
+  String get catSocialWelfare => 'సామాజిక సంక్షేమం';
+
+  @override
+  String get catEconomy => 'ఆర్థిక వ్యవస్థ';
+
+  @override
+  String get catGovernment => 'ప్రభుత్వం';
+
+  @override
+  String get catTransport => 'రవాణా';
+
+  @override
+  String get catPublicSafety => 'ప్రజా భద్రత';
+
+  @override
+  String get catFinancial => 'ఆర్థిక';
+
+  @override
+  String get catUtilities => 'ఉపయోగాలు';
+
+  @override
+  String get farmersWelfare => 'రైతుల సంక్షేమం';
+
+  @override
+  String get studentsEducation => 'విద్యార్థులు & విద్య';
+
+  @override
+  String get womenEmpowerment => 'మహిళా సాధికారత';
+
+  @override
+  String get seniorCitizens => 'వయోవృద్ధులు';
+
+  @override
+  String get youthEmployment => 'యువత & ఉపాధి';
+
+  @override
+  String get housingSchemes => 'గృహ పథకాలు';
+
+  @override
+  String get healthcareCashless => 'ఆరోగ్య సంరక్షణ';
+
+  @override
+  String get businessMsme => 'వ్యాపారం & MSME';
+
+  @override
+  String get workersLabour => 'కార్మికులు & శ్రమ';
+
+  @override
+  String get subsidiesEnergy => 'సబ్సిడీలు & శక్తి';
+
+  @override
+  String get fishermenWelfare => 'మత్స్యకారుల సంక్షేమం';
 }

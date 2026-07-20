@@ -10,6 +10,7 @@ import '../themes/party_theme_config.dart';
 import '../utils/mandal_mapping.dart';
 import '../screens/chat_screen.dart';
 import '../screens/ward_admin/create_work_update_screen.dart';
+import '../utils/category_mapping.dart';
 
 class OfficerAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -405,7 +406,7 @@ class ComplaintListTile extends StatelessWidget {
                       ],
                       Expanded(
                         child: Text(
-                          complaint.category,
+                          CategoryMapping.getLocalizedCategory(context, complaint.category),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -761,7 +762,7 @@ class ComplaintDetailsModal {
                     ),
                     const SizedBox(height: 12),
                     _buildDetailRow(Icons.tag, isTelugu ? 'ఫిర్యాదు ID' : 'Complaint ID', c.id),
-                    _buildDetailRow(Icons.category_outlined, isTelugu ? 'వర్గం' : 'Category', c.category),
+                    _buildDetailRow(Icons.category_outlined, isTelugu ? 'వర్గం' : 'Category', CategoryMapping.getLocalizedCategory(context, c.category)),
                     _buildDetailRow(Icons.person_outline, isTelugu ? 'పౌరుని పేరు' : 'Citizen Name', c.citizenName),
                     _buildDetailRow(Icons.phone_outlined, isTelugu ? 'మొబైల్ నంబర్' : 'Mobile Number', c.citizenPhone),
                     _buildDetailRow(Icons.admin_panel_settings_outlined, isTelugu ? 'కేటాయించిన అధికారి' : 'Assigned Officer', c.assignedOfficerId != null ? 'Officer ID: ${c.assignedOfficerId}' : 'Unassigned'),

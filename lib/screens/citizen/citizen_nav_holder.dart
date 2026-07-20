@@ -183,32 +183,26 @@ class _CitizenNavHolderState extends State<CitizenNavHolder> {
     ];
 
     return Scaffold(
-      extendBody: true, // Needed for floating nav bar
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: _currentIndex,
-          children: screens,
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: screens,
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 24.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildNavItem(0, Icons.home_outlined, Icons.home, loc.home, activeParty.primaryColor),
                 _buildNavItem(1, Icons.assignment_outlined, Icons.assignment, loc.complaint, activeParty.primaryColor),

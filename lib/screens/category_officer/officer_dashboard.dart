@@ -14,6 +14,7 @@ import '../../widgets/shared_officer_widgets.dart';
 import '../../widgets/notification_bell.dart';
 import '../citizen/track_complaints.dart';
 import '../../utils/category_mapping.dart';
+import '../../utils/quick_action_helpers.dart';
 
 import '../announcements/create_announcement_screen.dart';
 import '../announcements/broadcast_history_screen.dart';
@@ -446,11 +447,21 @@ class _OfficerDashboardTabState extends State<OfficerDashboardTab> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildQuickActionBtn(Icons.forward, l10n.forward, themeConfig.primaryColor, () {}),
-                  _buildQuickActionBtn(Icons.warning, l10n.escalate, themeConfig.primaryColor, () {}),
-                  _buildQuickActionBtn(Icons.check_circle, l10n.close, themeConfig.primaryColor, () {}),
-                  _buildQuickActionBtn(Icons.phone, l10n.callCitizen, themeConfig.primaryColor, () {}),
-                  _buildQuickActionBtn(Icons.picture_as_pdf, l10n.generateReport, themeConfig.primaryColor, () {}),
+                  _buildQuickActionBtn(Icons.forward, l10n.forward, themeConfig.primaryColor, () {
+                    QuickActionHelpers.handleForward(context, appState, themeConfig);
+                  }),
+                  _buildQuickActionBtn(Icons.warning, l10n.escalate, themeConfig.primaryColor, () {
+                    QuickActionHelpers.handleEscalate(context, appState, themeConfig);
+                  }),
+                  _buildQuickActionBtn(Icons.check_circle, l10n.close, themeConfig.primaryColor, () {
+                    QuickActionHelpers.handleClose(context, appState, themeConfig);
+                  }),
+                  _buildQuickActionBtn(Icons.phone, l10n.callCitizen, themeConfig.primaryColor, () {
+                    QuickActionHelpers.handleCallCitizen(context, appState, themeConfig);
+                  }),
+                  _buildQuickActionBtn(Icons.picture_as_pdf, l10n.generateReport, themeConfig.primaryColor, () {
+                    QuickActionHelpers.handleGenerateReport(context, appState, themeConfig);
+                  }),
                 ],
               ),
             ),

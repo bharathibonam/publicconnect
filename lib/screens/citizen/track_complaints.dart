@@ -309,99 +309,182 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
     final isHighlighted = complaint.id == appState.highlightedComplaintId;
 
     return Card(
-      color: isHighlighted ? Theme.of(context).primaryColor.withValues(alpha: 0.05) : Colors.white,
-      margin: const EdgeInsets.only(bottom: 14),
-      elevation: isHighlighted ? 4 : 3,
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 20),
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: isHighlighted ? BorderSide(color: Theme.of(context).primaryColor, width: 2) : BorderSide.none,
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: Colors.grey.shade200, width: 1),
       ),
-      shadowColor: Colors.black.withValues(alpha: 0.08),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          backgroundColor: Colors.grey.shade50,
-          collapsedBackgroundColor: Colors.white,
           initiallyExpanded: isHighlighted,
-          childrenPadding: EdgeInsets.zero,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Container(
-            padding: const EdgeInsets.all(10),
+          tilePadding: EdgeInsets.zero,
+          trailing: const SizedBox.shrink(),
+          title: Container(
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: complaint.statusColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _getCategoryIcon(complaint.category),
-              color: complaint.statusColor,
-              size: 24,
-            ),
-          ),
-          title: Text(
-            _getTranslatedCategory(complaint.category, isTelugu),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text(
-                '${isTelugu ? 'సమర్పించబడింది' : 'Submitted'}: ${_formatDate(complaint.createdAt)}',
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFF4C1D95)], // Purple gradient
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  _badge(_getTranslatedStatus(complaint.statusText, isTelugu), complaint.statusColor),
-                  const SizedBox(width: 6),
-                  _badge(
-                    '${_getTranslatedPriority(complaint.priorityText, isTelugu)} ${isTelugu ? 'ప్రాధాన్యత' : 'Priority'}',
-                    complaint.priorityColor,
-                  ),
-                ],
-              ),
-            ],
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [BoxShadow(color: const Color(0xFF7C3AED).withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 6))],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Complaint ID', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          const SizedBox(height: 4),
+                          Text(
+                            'PC/${complaint.id.toUpperCase().substring(0, 8)}',
+                            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: complaint.status == ComplaintStatus.resolved ? const Color(0xFF22C55E) : const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        complaint.statusText.toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Reported On', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatDate(complaint.createdAt),
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Category', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          const SizedBox(height: 2),
+                          Text(
+                            _getTranslatedCategory(complaint.category, isTelugu),
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(height: 1, color: Colors.black12),
-                  const SizedBox(height: 16),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(complaint: complaint),
+                      Text(
+                        Trans.t('res_timeline', isTelugu),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: (complaint.status == ComplaintStatus.resolved ? const Color(0xFF22C55E) : const Color(0xFF3B82F6)).withValues(alpha: 0.1), 
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.analytics, size: 12, color: complaint.status == ComplaintStatus.resolved ? const Color(0xFF22C55E) : const Color(0xFF3B82F6)),
+                            const SizedBox(width: 4),
+                            Text(
+                              complaint.status == ComplaintStatus.resolved ? '100% Complete' : (complaint.status == ComplaintStatus.inProgress ? '65% Complete' : '25% Complete'),
+                              style: TextStyle(color: complaint.status == ComplaintStatus.resolved ? const Color(0xFF22C55E) : const Color(0xFF3B82F6), fontSize: 11, fontWeight: FontWeight.bold),
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: Text(isTelugu ? 'చాట్' : 'Chat'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 24),
+                  _buildTimelineStepper(complaint, isTelugu),
 
+                  // Officer Contact Card (If Assigned or In Progress)
+                  if (complaint.status != ComplaintStatus.submitted) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                            child: Icon(Icons.person, color: Theme.of(context).primaryColor),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(isTelugu ? 'కేటాయించిన అధికారి' : 'Assigned Officer', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                const SizedBox(height: 2),
+                                Text(isTelugu ? 'వార్డు స్పెషలిస్ట్' : 'Ward Specialist', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                              ],
+                            ),
+                          ),
+                          IconButton.filledTonal(
+                            icon: const Icon(Icons.call, size: 20),
+                            onPressed: () {}, // Action intact for real implementation
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+                  
                   // Identity Summary metadata block
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.1)),
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey.shade100),
                     ),
                     child: Column(
                       children: [
@@ -439,33 +522,47 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Before / After image container (Render side by side if resolution photo exists!)
                   _buildEvidenceImagesSection(context, complaint, isTelugu),
 
-                  // Timeline section
-                  const SizedBox(height: 16),
-                  Text(
-                    Trans.t('res_timeline', isTelugu),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTimelineStepper(complaint, isTelugu),
-
-                  // Citizen Feedback section (if status is resolved)
+                  // Citizen Feedback section
                   if (complaint.status == ComplaintStatus.resolved) ...[
                     const Divider(height: 24),
-                    _buildFeedbackSection(complaint, isTelugu),
+                    _buildFeedbackSection(complaint, isTelugu, user),
                   ],
 
                   if (user != null && user.role != UserRole.citizen) ...[
                     const SizedBox(height: 16),
                     _buildOfficerActions(context, complaint, isTelugu, user, appState),
                   ],
+                  
+                  const Divider(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _actionButton(Icons.visibility_outlined, 'View Details', () {}),
+                      _actionButton(Icons.chat_bubble_outline, 'Contact Officer', () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(complaint: complaint)));
+                      }),
+                    ],
+                  ),
                 ],
               ),
             )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _actionButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.grey.shade600, size: 24),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
@@ -804,7 +901,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
     return Image.network(path);
   }
 
-  Widget _buildFeedbackSection(Complaint comp, bool isTelugu) {
+  Widget _buildFeedbackSection(Complaint comp, bool isTelugu, User? user) {
     final appState = Provider.of<AppState>(context, listen: false);
 
     if (comp.feedbackRating != null && comp.feedbackRating!.isNotEmpty) {
@@ -849,6 +946,33 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                     ],
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (user != null && user.role != UserRole.citizen) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.grey.shade600, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isTelugu ? 'ఇంకా అభిప్రాయం సమర్పించబడలేదు.' : 'No feedback submitted yet.',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade700,
+                ),
               ),
             ),
           ],
@@ -1001,36 +1125,47 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
         currentStepIndex = 1;
         break;
       case ComplaintStatus.inProgress:
-        currentStepIndex = 2;
+        currentStepIndex = 3;
         break;
       case ComplaintStatus.resolved:
-        currentStepIndex = 3;
+        currentStepIndex = 5; // All completed
         break;
     }
 
     return Column(
       children: [
         _timelineStep(
-          title: isTelugu ? 'ఫిర్యాదు సమర్పించబడింది' : 'Grievance Submitted',
-          description: isTelugu ? 'ఫిర్యాదు మున్సిపల్ డేటాబేస్లో నమోదు చేయబడింది.' : 'Logged securely in the municipal database.',
+          title: isTelugu ? 'ఫిర్యాదు సమర్పించబడింది' : 'Complaint Submitted',
+          description: isTelugu ? 'ఫిర్యాదు మున్సిపల్ డేటాబేస్లో నమోదు చేయబడింది.' : 'Your complaint has been successfully registered.',
           time: _formatDate(comp.createdAt),
-          isActive: currentStepIndex >= 1,
+          isCompleted: currentStepIndex > 1,
+          isActive: currentStepIndex == 1,
+          isLast: false,
+        ),
+        _timelineStep(
+          title: isTelugu ? 'అధికారికి కేటాయించబడింది' : 'Assigned to Officer',
+          description: isTelugu ? 'అధికారి సమస్యను సమీక్షిస్తున్నారు.' : 'Officer is reviewing your complaint.',
+          time: currentStepIndex > 1 ? _formatDate(comp.createdAt.add(const Duration(minutes: 30))) : '', 
+          isCompleted: currentStepIndex > 2,
+          isActive: currentStepIndex == 2,
           isLast: false,
         ),
         _timelineStep(
           title: isTelugu ? 'పురోగతిలో ఉంది' : 'In Progress',
           description: isTelugu ? 'క్షేత్రస్థాయిలో సమస్య పరిష్కార పనులు జరుగుతున్నాయి.' : 'Field correction works currently underway.',
-          time: currentStepIndex >= 2 ? (isTelugu ? 'పని జరుగుతోంది' : 'In Progress') : (isTelugu ? 'పెండింగ్' : 'Pending'),
-          isActive: currentStepIndex >= 2,
+          time: currentStepIndex > 3 ? (comp.resolvedAt != null ? _formatDate(comp.resolvedAt!) : '') : '',
+          isCompleted: currentStepIndex > 3,
+          isActive: currentStepIndex == 3,
           isLast: false,
         ),
         _timelineStep(
           title: isTelugu ? 'పరిష్కరించబడింది' : 'Resolved',
           description: isTelugu ? 'సమస్య పరిష్కరించబడింది, పరిష్కార ఫోటో అప్‌లోడ్ చేయబడింది.' : 'Issue resolved. Ward admin uploaded resolution photo.',
-          time: currentStepIndex >= 3 
+          time: currentStepIndex > 4 
               ? (comp.resolvedAt != null ? _formatDate(comp.resolvedAt!) : (isTelugu ? 'పరిష్కరించబడింది' : 'Resolved')) 
-              : (isTelugu ? 'పెండింగ్' : 'Pending'),
-          isActive: currentStepIndex >= 3,
+              : '',
+          isCompleted: currentStepIndex > 4, 
+          isActive: currentStepIndex == 4, 
           isLast: true,
         ),
       ],
@@ -1041,26 +1176,30 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
     required String title,
     required String description,
     required String time,
+    required bool isCompleted,
     required bool isActive,
     required bool isLast,
   }) {
-    final color = isActive ? Theme.of(context).primaryColor : Colors.grey.shade300;
+    final color = isCompleted ? const Color(0xFF22C55E) : (isActive ? const Color(0xFFEAB308) : Colors.grey.shade300);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Column(
           children: [
             Container(
-              width: 16,
-              height: 16,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
-                color: isActive ? Colors.white : Colors.grey.shade100,
-                border: Border.all(color: color, width: 4),
+                color: isCompleted ? const Color(0xFF22C55E) : (isActive ? const Color(0xFFEAB308) : Colors.transparent),
+                border: Border.all(color: color, width: 2),
                 shape: BoxShape.circle,
               ),
+              child: isCompleted
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : (isActive ? null : const SizedBox.shrink()),
             ),
             if (!isLast)
-              Container(width: 2, height: 48, color: color),
+              Container(width: 2, height: 48, color: isCompleted ? const Color(0xFF22C55E) : Colors.grey.shade300),
           ],
         ),
         const SizedBox(width: 14),
@@ -1076,30 +1215,31 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                       title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: isActive ? const Color(0xFF0F172A) : Colors.grey,
+                        fontSize: 14,
+                        color: isActive || isCompleted ? const Color(0xFF0F172A) : Colors.grey,
                       ),
                     ),
                   ),
-                  Text(
-                    time,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isActive ? Theme.of(context).primaryColor : Colors.grey,
-                      fontWeight: FontWeight.w600,
+                  if (time.isNotEmpty)
+                    Text(
+                      time,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
               Text(
                 description,
                 style: TextStyle(
-                  fontSize: 11,
-                  color: isActive ? Colors.black54 : Colors.grey.shade400,
+                  fontSize: 12,
+                  color: isActive || isCompleted ? Colors.grey.shade700 : Colors.grey.shade400,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
             ],
           ),
         ),

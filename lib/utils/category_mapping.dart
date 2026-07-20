@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 class CategoryMapping {
   static const Map<String, List<String>> officerCategories = {
@@ -113,6 +114,25 @@ class CategoryMapping {
       'Education',
       'Other Issues',
     ];
+  }
+
+  static String getLocalizedCategory(BuildContext context, String category) {
+    final loc = AppLocalizations.of(context);
+    if (loc == null) return category;
+    
+    switch (category) {
+      case 'Water Supply': return loc.catWaterSupply;
+      case 'Electricity': return loc.catElectricity;
+      case 'Roads & Infrastructure': return loc.catRoads;
+      case 'Agriculture': return loc.catAgriculture;
+      case 'Health': return loc.catHealth;
+      case 'Sanitation': return loc.catSanitation;
+      case 'Revenue & Certificates': return loc.catRevenue;
+      case 'Women & Child Welfare': return loc.catWomenChild;
+      case 'Education': return loc.catEducation;
+      case 'Other Issues': return loc.catOther;
+      default: return category;
+    }
   }
 
   static IconData getIconForCategory(String category) {

@@ -441,6 +441,16 @@ class SupabaseService {
     }).eq('id', id);
   }
 
+  static Future<void> forwardComplaint(
+    String id,
+    String targetRole,
+  ) async {
+    await _db.from('complaints').update({
+      'isPushed': true,
+      'pushedTo': targetRole,
+    }).eq('id', id);
+  }
+
   static Future<void> escalateComplaint(
     String id,
     String targetRole,
@@ -594,6 +604,18 @@ class SupabaseService {
   ) async {
     return _uploadFileToStorage(
       imageFile,
+      'app_assets',
+      '$assetName.jpg',
+      'image/jpeg',
+    );
+  }
+
+  static Future<String?> uploadAppAssetImageBytes(
+    Uint8List bytes,
+    String assetName,
+  ) async {
+    return _uploadBytesToStorage(
+      bytes,
       'app_assets',
       '$assetName.jpg',
       'image/jpeg',

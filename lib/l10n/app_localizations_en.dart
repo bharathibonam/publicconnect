@@ -72,7 +72,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get constituencyNameJsp => 'Pithapuram';
 
   @override
-  String get constituencyNameTdp => 'Jaggampeta';
+  String get constituencyNameTdp => 'Rajahmundry';
 
   @override
   String get constituencyOffice => 'Constituency Office';
@@ -150,7 +150,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mlaNameJsp => 'Pawan Kalyan';
 
   @override
-  String get mlaNameTdp => 'Jyothula Nehru';
+  String get mlaNameTdp => 'G M Harish Balayogi';
 
   @override
   String get myDepartmentSummary => 'My Department Summary';
@@ -282,8 +282,234 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wardMemberDashboard => 'Ward Member Dashboard';
 
   @override
+  String get wardOfficer => 'Ward Officer';
+
+  @override
+  String get wardMembers => 'Ward Members';
+
+  @override
+  String get welcome => 'Welcome';
+
+  @override
+  String welcomeGaru(Object name) {
+    return '$name Garu';
+  }
+
+  @override
+  String constituencySuffix(Object name) {
+    return '$name Constituency';
+  }
+
+  @override
+  String get newAnnouncement => 'New Announcement';
+
+  @override
+  String get broadcastHistory => 'Broadcast History';
+
+  @override
+  String get profileUpdated => 'Profile photo updated successfully';
+
+  @override
+  String get photoUploadFailed => 'Failed to upload photo';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get generateExcel => 'Generate Excel Sheet';
+
+  @override
+  String get generatingExcel => 'Generating Excel Sheet...';
+
+  @override
   String get wardSummary => 'Ward Summary';
 
   @override
   String get whatsappSupport => 'WhatsApp Support';
+
+  @override
+  String get catWaterSupply => 'Water Supply';
+
+  @override
+  String get catElectricity => 'Electricity';
+
+  @override
+  String get catRoads => 'Roads & Infrastructure';
+
+  @override
+  String get catAgriculture => 'Agriculture';
+
+  @override
+  String get catHealth => 'Health';
+
+  @override
+  String get catSanitation => 'Sanitation';
+
+  @override
+  String get catRevenue => 'Revenue & Certificates';
+
+  @override
+  String get catWomenChild => 'Women & Child Welfare';
+
+  @override
+  String get catEducation => 'Education';
+
+  @override
+  String get catOther => 'Other Issues';
+
+  @override
+  String get mlaNameBjp => 'Daggubati Purandeswari';
+
+  @override
+  String get constituencyNameBjp => 'Rajahmundry';
+
+  @override
+  String get partyNameBjp => 'BJP';
+
+  @override
+  String get voiceComplaint => 'Voice Complaint';
+
+  @override
+  String get trackComplaint => 'Track Complaint';
+
+  @override
+  String get services => 'Services';
+
+  @override
+  String get welfareSchemes => 'Welfare Schemes';
+
+  @override
+  String get emergencyServices => 'Emergency';
+
+  @override
+  String get developmentWorks => 'Development Works';
+
+  @override
+  String get schools => 'Schools';
+
+  @override
+  String get juniorColleges => 'Junior Colleges';
+
+  @override
+  String get degreeColleges => 'Degree Colleges';
+
+  @override
+  String get polytechnicColleges => 'Polytechnic Colleges';
+
+  @override
+  String get itiColleges => 'ITI Colleges';
+
+  @override
+  String get govHospitals => 'Government Hospitals';
+
+  @override
+  String get pvtHospitals => 'Private Hospitals';
+
+  @override
+  String get policeStations => 'Police Stations';
+
+  @override
+  String get fireStations => 'Fire Stations';
+
+  @override
+  String get municipalOffice => 'Municipal Office';
+
+  @override
+  String get meesevaCentres => 'MeeSeva Centres';
+
+  @override
+  String get libraries => 'Libraries';
+
+  @override
+  String get publicParks => 'Public Parks';
+
+  @override
+  String get busStations => 'Bus Stations';
+
+  @override
+  String get railwayInfo => 'Railway Information';
+
+  @override
+  String get otherPublicServices => 'Other Public Services';
+
+  @override
+  String get phc => 'Primary Health Centres (PHCs)';
+
+  @override
+  String get chc => 'Community Health Centres';
+
+  @override
+  String get vetHospitals => 'Veterinary Hospitals';
+
+  @override
+  String get anganwadi => 'Anganwadi Centres';
+
+  @override
+  String get banks => 'Banks & Financial Hubs';
+
+  @override
+  String get postOffices => 'Post Offices';
+
+  @override
+  String get govOffices => 'Government Offices';
+
+  @override
+  String get rationShops => 'Ration Shops (PDS)';
+
+  @override
+  String get catSocialWelfare => 'Social Welfare';
+
+  @override
+  String get catEconomy => 'Economy';
+
+  @override
+  String get catGovernment => 'Government';
+
+  @override
+  String get catTransport => 'Transport';
+
+  @override
+  String get catPublicSafety => 'Public Safety';
+
+  @override
+  String get catFinancial => 'Financial';
+
+  @override
+  String get catUtilities => 'Utilities';
+
+  @override
+  String get farmersWelfare => 'Farmers Welfare';
+
+  @override
+  String get studentsEducation => 'Students & Education';
+
+  @override
+  String get womenEmpowerment => 'Women Empowerment';
+
+  @override
+  String get seniorCitizens => 'Senior Citizens';
+
+  @override
+  String get youthEmployment => 'Youth & Employment';
+
+  @override
+  String get housingSchemes => 'Housing Schemes';
+
+  @override
+  String get healthcareCashless => 'Healthcare & Cashless';
+
+  @override
+  String get businessMsme => 'Business & MSME';
+
+  @override
+  String get workersLabour => 'Workers & Labour';
+
+  @override
+  String get subsidiesEnergy => 'Subsidies & Energy';
+
+  @override
+  String get fishermenWelfare => 'Fishermen Welfare';
 }

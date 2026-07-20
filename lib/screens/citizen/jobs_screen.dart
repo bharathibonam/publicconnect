@@ -99,7 +99,7 @@ class JobsScreen extends StatelessWidget {
                     context,
                     company: 'AP State Government',
                     role: isTelugu ? 'వార్డ్ సచివాలయం సెక్రటరీ' : 'Ward Secretariat Secretary',
-                    location: '${activeParty.constituencyName} Constituency',
+                    location: '${activeParty.getLocalizedConstituencyName(context)} Constituency',
                     salary: '₹15,000 / month',
                     type: 'Govt. Contract',
                     isGovt: true,

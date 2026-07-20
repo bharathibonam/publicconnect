@@ -262,15 +262,43 @@ class AdminDashboardTab extends StatelessWidget {
                     // Navigate to complaints list so they can select one to resolve
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackComplaintsScreen()));
                   }),
-
-                  _buildQuickActionBtn(Icons.campaign, l10n.publicNotify, themeConfig.primaryColor, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateAnnouncementScreen()));
-                  }),
-                  _buildQuickActionBtn(Icons.history, 'Broadcast History', themeConfig.primaryColor, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const BroadcastHistoryScreen()));
-                  }),
                 ],
               ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const CreateAnnouncementScreen())),
+                    icon: const Icon(Icons.campaign, size: 18),
+                    label: Text(l10n.publicNotify),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: themeConfig.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const BroadcastHistoryScreen())),
+                    icon: const Icon(Icons.history, size: 18),
+                    label: const Text('Broadcast History'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: themeConfig.primaryColor,
+                      side: BorderSide(color: themeConfig.primaryColor),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
 

@@ -227,7 +227,7 @@ abstract class AppLocalizations {
   /// No description provided for @constituencyNameTdp.
   ///
   /// In en, this message translates to:
-  /// **'Jaggampeta'**
+  /// **'Rajahmundry'**
   String get constituencyNameTdp;
 
   /// No description provided for @constituencyOffice.
@@ -383,7 +383,7 @@ abstract class AppLocalizations {
   /// No description provided for @mlaNameTdp.
   ///
   /// In en, this message translates to:
-  /// **'Jyothula Nehru'**
+  /// **'G M Harish Balayogi'**
   String get mlaNameTdp;
 
   /// No description provided for @myDepartmentSummary.
@@ -644,6 +644,84 @@ abstract class AppLocalizations {
   /// **'Ward Member Dashboard'**
   String get wardMemberDashboard;
 
+  /// No description provided for @wardOfficer.
+  ///
+  /// In en, this message translates to:
+  /// **'Ward Officer'**
+  String get wardOfficer;
+
+  /// No description provided for @wardMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Ward Members'**
+  String get wardMembers;
+
+  /// No description provided for @welcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get welcome;
+
+  /// No description provided for @welcomeGaru.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} Garu'**
+  String welcomeGaru(Object name);
+
+  /// No description provided for @constituencySuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} Constituency'**
+  String constituencySuffix(Object name);
+
+  /// No description provided for @newAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'New Announcement'**
+  String get newAnnouncement;
+
+  /// No description provided for @broadcastHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast History'**
+  String get broadcastHistory;
+
+  /// No description provided for @profileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo updated successfully'**
+  String get profileUpdated;
+
+  /// No description provided for @photoUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload photo'**
+  String get photoUploadFailed;
+
+  /// No description provided for @camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// No description provided for @gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
+
+  /// No description provided for @generateExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Excel Sheet'**
+  String get generateExcel;
+
+  /// No description provided for @generatingExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating Excel Sheet...'**
+  String get generatingExcel;
+
   /// No description provided for @wardSummary.
   ///
   /// In en, this message translates to:
@@ -655,6 +733,372 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'WhatsApp Support'**
   String get whatsappSupport;
+
+  /// No description provided for @catWaterSupply.
+  ///
+  /// In en, this message translates to:
+  /// **'Water Supply'**
+  String get catWaterSupply;
+
+  /// No description provided for @catElectricity.
+  ///
+  /// In en, this message translates to:
+  /// **'Electricity'**
+  String get catElectricity;
+
+  /// No description provided for @catRoads.
+  ///
+  /// In en, this message translates to:
+  /// **'Roads & Infrastructure'**
+  String get catRoads;
+
+  /// No description provided for @catAgriculture.
+  ///
+  /// In en, this message translates to:
+  /// **'Agriculture'**
+  String get catAgriculture;
+
+  /// No description provided for @catHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get catHealth;
+
+  /// No description provided for @catSanitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Sanitation'**
+  String get catSanitation;
+
+  /// No description provided for @catRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue & Certificates'**
+  String get catRevenue;
+
+  /// No description provided for @catWomenChild.
+  ///
+  /// In en, this message translates to:
+  /// **'Women & Child Welfare'**
+  String get catWomenChild;
+
+  /// No description provided for @catEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get catEducation;
+
+  /// No description provided for @catOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Issues'**
+  String get catOther;
+
+  /// No description provided for @mlaNameBjp.
+  ///
+  /// In en, this message translates to:
+  /// **'Daggubati Purandeswari'**
+  String get mlaNameBjp;
+
+  /// No description provided for @constituencyNameBjp.
+  ///
+  /// In en, this message translates to:
+  /// **'Rajahmundry'**
+  String get constituencyNameBjp;
+
+  /// No description provided for @partyNameBjp.
+  ///
+  /// In en, this message translates to:
+  /// **'BJP'**
+  String get partyNameBjp;
+
+  /// No description provided for @voiceComplaint.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Complaint'**
+  String get voiceComplaint;
+
+  /// No description provided for @trackComplaint.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Complaint'**
+  String get trackComplaint;
+
+  /// No description provided for @services.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get services;
+
+  /// No description provided for @welfareSchemes.
+  ///
+  /// In en, this message translates to:
+  /// **'Welfare Schemes'**
+  String get welfareSchemes;
+
+  /// No description provided for @emergencyServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency'**
+  String get emergencyServices;
+
+  /// No description provided for @developmentWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'Development Works'**
+  String get developmentWorks;
+
+  /// No description provided for @schools.
+  ///
+  /// In en, this message translates to:
+  /// **'Schools'**
+  String get schools;
+
+  /// No description provided for @juniorColleges.
+  ///
+  /// In en, this message translates to:
+  /// **'Junior Colleges'**
+  String get juniorColleges;
+
+  /// No description provided for @degreeColleges.
+  ///
+  /// In en, this message translates to:
+  /// **'Degree Colleges'**
+  String get degreeColleges;
+
+  /// No description provided for @polytechnicColleges.
+  ///
+  /// In en, this message translates to:
+  /// **'Polytechnic Colleges'**
+  String get polytechnicColleges;
+
+  /// No description provided for @itiColleges.
+  ///
+  /// In en, this message translates to:
+  /// **'ITI Colleges'**
+  String get itiColleges;
+
+  /// No description provided for @govHospitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Government Hospitals'**
+  String get govHospitals;
+
+  /// No description provided for @pvtHospitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Hospitals'**
+  String get pvtHospitals;
+
+  /// No description provided for @policeStations.
+  ///
+  /// In en, this message translates to:
+  /// **'Police Stations'**
+  String get policeStations;
+
+  /// No description provided for @fireStations.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire Stations'**
+  String get fireStations;
+
+  /// No description provided for @municipalOffice.
+  ///
+  /// In en, this message translates to:
+  /// **'Municipal Office'**
+  String get municipalOffice;
+
+  /// No description provided for @meesevaCentres.
+  ///
+  /// In en, this message translates to:
+  /// **'MeeSeva Centres'**
+  String get meesevaCentres;
+
+  /// No description provided for @libraries.
+  ///
+  /// In en, this message translates to:
+  /// **'Libraries'**
+  String get libraries;
+
+  /// No description provided for @publicParks.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Parks'**
+  String get publicParks;
+
+  /// No description provided for @busStations.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus Stations'**
+  String get busStations;
+
+  /// No description provided for @railwayInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Railway Information'**
+  String get railwayInfo;
+
+  /// No description provided for @otherPublicServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Public Services'**
+  String get otherPublicServices;
+
+  /// No description provided for @phc.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary Health Centres (PHCs)'**
+  String get phc;
+
+  /// No description provided for @chc.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Health Centres'**
+  String get chc;
+
+  /// No description provided for @vetHospitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Veterinary Hospitals'**
+  String get vetHospitals;
+
+  /// No description provided for @anganwadi.
+  ///
+  /// In en, this message translates to:
+  /// **'Anganwadi Centres'**
+  String get anganwadi;
+
+  /// No description provided for @banks.
+  ///
+  /// In en, this message translates to:
+  /// **'Banks & Financial Hubs'**
+  String get banks;
+
+  /// No description provided for @postOffices.
+  ///
+  /// In en, this message translates to:
+  /// **'Post Offices'**
+  String get postOffices;
+
+  /// No description provided for @govOffices.
+  ///
+  /// In en, this message translates to:
+  /// **'Government Offices'**
+  String get govOffices;
+
+  /// No description provided for @rationShops.
+  ///
+  /// In en, this message translates to:
+  /// **'Ration Shops (PDS)'**
+  String get rationShops;
+
+  /// No description provided for @catSocialWelfare.
+  ///
+  /// In en, this message translates to:
+  /// **'Social Welfare'**
+  String get catSocialWelfare;
+
+  /// No description provided for @catEconomy.
+  ///
+  /// In en, this message translates to:
+  /// **'Economy'**
+  String get catEconomy;
+
+  /// No description provided for @catGovernment.
+  ///
+  /// In en, this message translates to:
+  /// **'Government'**
+  String get catGovernment;
+
+  /// No description provided for @catTransport.
+  ///
+  /// In en, this message translates to:
+  /// **'Transport'**
+  String get catTransport;
+
+  /// No description provided for @catPublicSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Safety'**
+  String get catPublicSafety;
+
+  /// No description provided for @catFinancial.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial'**
+  String get catFinancial;
+
+  /// No description provided for @catUtilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Utilities'**
+  String get catUtilities;
+
+  /// No description provided for @farmersWelfare.
+  ///
+  /// In en, this message translates to:
+  /// **'Farmers Welfare'**
+  String get farmersWelfare;
+
+  /// No description provided for @studentsEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Students & Education'**
+  String get studentsEducation;
+
+  /// No description provided for @womenEmpowerment.
+  ///
+  /// In en, this message translates to:
+  /// **'Women Empowerment'**
+  String get womenEmpowerment;
+
+  /// No description provided for @seniorCitizens.
+  ///
+  /// In en, this message translates to:
+  /// **'Senior Citizens'**
+  String get seniorCitizens;
+
+  /// No description provided for @youthEmployment.
+  ///
+  /// In en, this message translates to:
+  /// **'Youth & Employment'**
+  String get youthEmployment;
+
+  /// No description provided for @housingSchemes.
+  ///
+  /// In en, this message translates to:
+  /// **'Housing Schemes'**
+  String get housingSchemes;
+
+  /// No description provided for @healthcareCashless.
+  ///
+  /// In en, this message translates to:
+  /// **'Healthcare & Cashless'**
+  String get healthcareCashless;
+
+  /// No description provided for @businessMsme.
+  ///
+  /// In en, this message translates to:
+  /// **'Business & MSME'**
+  String get businessMsme;
+
+  /// No description provided for @workersLabour.
+  ///
+  /// In en, this message translates to:
+  /// **'Workers & Labour'**
+  String get workersLabour;
+
+  /// No description provided for @subsidiesEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Subsidies & Energy'**
+  String get subsidiesEnergy;
+
+  /// No description provided for @fishermenWelfare.
+  ///
+  /// In en, this message translates to:
+  /// **'Fishermen Welfare'**
+  String get fishermenWelfare;
 }
 
 class _AppLocalizationsDelegate

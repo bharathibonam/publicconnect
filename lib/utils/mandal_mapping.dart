@@ -1,80 +1,139 @@
 class MandalMapping {
   static const List<String> mandals = [
-    'Jaggampeta',
-    'Gandepalle',
-    'Gokavaram',
-    'Kirlampudi',
+    'Anaparthy',
+    'Biccavolu',
+    'Chagallu',
+    'Devarapalli',
+    'Dwaraka Tirumala',
+    'Gopalapuram',
+    'Kadiam',
+    'Korukonda',
+    'Kovvur',
+    'Nallajerla',
+    'Nidadavole',
+    'Part-Rajahmundry Urban Mandal / RMC',
+    'Pedapudi',
+    'Peravali',
+    'RMC Wards 42–89',
+    'RMC Wards 7–35',
+    'Rajahmundry Rural',
+    'Rajanagaram',
+    'Rangampeta',
+    'Seethanagaram',
+    'Tallapudi',
+    'Undrajavaram',
   ];
 
   static const Map<String, List<String>> _mandalToPanchayats = {
-    'Jaggampeta': [
-      'Gollalagunta GP',
-      'Govindapuram GP',
-      'Gurrappalem GP',
-      'Irripaka GP',
-      'J. Kothuru GP',
-      'Jaggampeta GP',
-      'Kandregula GP',
-      'Katravulapalle GP',
-      'Mallisala GP',
-      'Mamidada GP',
-      'Manyanvari Palem GP',
-      'Marripaka GP',
-      'Narendrapatnam GP',
-      'Ramavaram GP',
-      'Vengayamma Puram GP',
+    'Anaparthy': [
+      'Anaparthy GP',
     ],
-    'Gandepalle': [
-      'Borrampalem GP',
-      'Gandepalle GP',
-      'Mallepalli GP',
-      'Murari GP',
-      'P. Nayakampalle GP',
-      'P. Surampalem GP',
-      'Ramayyapalem GP',
-      'Singarampalem GP',
-      'Talluru GP',
-      'Uppalapadu GP',
-      'Yellamilli GP',
-      'Yerrampalem GP',
-      'Z. Ragampeta GP',
+    'Biccavolu': [
+      'Biccavolu GP',
     ],
-    'Gokavaram': [
-      'Atchutapuram GP',
-      'Gadelapalem GP',
-      'Gangampalem GP',
-      'Gokavaram GP',
-      'Gummalladuddi GP',
-      'Itikayala Palle GP',
-      'Kamarajupeta GP',
-      'Kothapalle GP',
-      'Krishnuni Palem GP',
-      'Mallavaram GP',
-      'Rampa Yerrampalem GP',
-      'Thanti Konda GP',
-      'Tirumalayapalem GP',
-      'Vedurupaka GP',
+    'Chagallu': [
+      'Chagallu GP',
     ],
-    'Kirlampudi': [
-      'Bhupalapatnam GP',
+    'Devarapalli': [
+      'Devarapalli GP',
+    ],
+    'Dwaraka Tirumala': [
+      'Dwaraka Tirumala GP',
+    ],
+    'Gopalapuram': [
+      'Gopalapuram GP',
+    ],
+    'Kadiam': [
+      'Kadiam GP',
+    ],
+    'Korukonda': [
+      'Bolleddupalem GP',
       'Burugupudi GP',
-      'Geddanapalle GP',
-      'Goneda GP',
-      'Jagapathinagaram GP',
-      'Krishnavaram GP',
-      'Mukkollu GP',
-      'Palem GP',
-      'Rajupalem GP',
-      'Ramachandra Puram GP',
-      'Ramakrishnapuram GP',
-      'S. Thimmapuram GP',
-      'Simhadri Puram GP',
-      'Somanarayani Peta GP',
-      'Somavaram GP',
-      'Sungarayunipalem GP',
-      'Thamarada GP',
-      'Veeravaram GP',
-      'Velanka GP',
+      'Butchempeta GP',
+      'Dosakayala Palli GP',
+      'Gadala GP',
+      'Gadarada GP',
+      'Jagannadha Puram GP',
+      'Kanupuru GP',
+      'Korukonda GP',
+      'Koti GP',
+      'Kotikesavaram GP',
+      'Munagala GP',
+      'Narasapuram GP',
+      'Raghavapuram GP',
+      'Srirangapatnam GP',
+      'Vegeswarapuram GP',
+    ],
+    'Kovvur': [
+      'Kovvur GP',
+    ],
+    'Nallajerla': [
+      'Nallajerla GP',
+    ],
+    'Nidadavole': [
+      'Nidadavole GP',
+    ],
+    'Part-Rajahmundry Urban Mandal / RMC': [
+      'Part-Rajahmundry Urban Mandal / RMC GP',
+    ],
+    'Pedapudi': [
+      'Pedapudi GP',
+    ],
+    'Peravali': [
+      'Peravali GP',
+    ],
+    'RMC Wards 42–89': [
+      'RMC Wards 42–89 GP',
+    ],
+    'RMC Wards 7–35': [
+      'RMC Wards 7–35 GP',
+    ],
+    'Rajahmundry Rural': [
+      'Rajahmundry Rural GP',
+    ],
+    'Rajanagaram': [
+      'Bhupalapatnam GP',
+      'G. Yerrampalem GP',
+      'Kalavacherla GP',
+      'Konda Gunturu GP',
+      'Mukkinada GP',
+      'Namavaram GP',
+      'Nandarada GP',
+      'Narendrapuram GP',
+      'Palacharla GP',
+      'Pallakadiam GP',
+      'Patha Thungapadu GP',
+      'Rajanagaram GP',
+      'Srikrishnapatnam GP',
+      'Thokada GP',
+      'Velugubanda GP',
+      'Venkatapuram GP',
+    ],
+    'Rangampeta': [
+      'Rangampeta GP',
+    ],
+    'Seethanagaram': [
+      'Chinakondepudi GP',
+      'Jalimudi GP',
+      'Katavaram GP',
+      'Kunavaram GP',
+      'Mirthipadu GP',
+      'Muggaulla GP',
+      'Mulakallanka GP',
+      'Munikudali GP',
+      'Nagampalle GP',
+      'Nallagonda GP',
+      'Purushothapatnam GP',
+      'Raghudevapuram GP',
+      'Seethanagaram GP',
+      'Singavaram GP',
+      'Vangalapudi GP',
+    ],
+    'Tallapudi': [
+      'Tallapudi GP',
+    ],
+    'Undrajavaram': [
+      'Undrajavaram GP',
     ],
   };
 
@@ -100,202 +159,208 @@ class MandalMapping {
   }
 
   static const Map<String, List<String>> panchayatToVillages = {
-    'Gram Panchayat': [
-      'Village / Town',
-    ],
-    'Gurrappalem GP': [
-      'Balabhadrapuram',
-      'Gurrappalem',
-    ],
-    'Gollalagunta GP': [
-      'Gollalagunta',
-      'Seethampeta',
-    ],
-    'Govindapuram GP': [
-      'Govindapuram',
-    ],
-    'Irripaka GP': [
-      'Irripaka',
-    ],
-    'J. Kothuru GP': [
-      'J. Kothuru',
-      'Tirupatirajupeta',
-    ],
-    'Jaggampeta GP': [
-      'Jaggampeta',
-      'Seethanagaram',
-    ],
-    'Kandregula GP': [
-      'Kandregula',
-    ],
-    'Katravulapalle GP': [
-      'Katravulapalle',
-    ],
-    'Mallisala GP': [
-      'Mallisala',
-    ],
-    'Mamidada GP': [
-      'Mamidada',
-    ],
-    'Manyanvari Palem GP': [
-      'Manyanvaripalem',
-    ],
-    'Marripaka GP': [
-      'Marripaka',
-    ],
-    'Narendrapatnam GP': [
-      'Narendrapatnam',
-    ],
-    'Vengayamma Puram GP': [
-      'Rajapudi',
-    ],
-    'Ramavaram GP': [
-      'Ramavaram',
-    ],
-    'Borrampalem GP': [
-      'Borrampalem',
-    ],
-    'Gandepalle GP': [
-      'Gandepalle',
-    ],
-    'Mallepalli GP': [
-      'Mallepalle',
-    ],
-    'Murari GP': [
-      'Murari',
-    ],
-    'Ramayyapalem GP': [
-      'North Tirupathi Rajapuram',
-    ],
-    'P. Nayakampalle GP': [
-      'P. Nayakampalle',
-    ],
-    'Z. Ragampeta GP': [
-      'Pro. Ragampeta',
-    ],
-    'Singarampalem GP': [
-      'Singarampalem',
-    ],
-    'P. Surampalem GP': [
-      'Surampalem',
-    ],
-    'Talluru GP': [
-      'Talluru',
-    ],
-    'Uppalapadu GP': [
-      'Uppalapadu',
-    ],
-    'Yellamilli GP': [
-      'Yellamilli',
-    ],
-    'Yerrampalem GP': [
-      'Yerrampalem',
-    ],
-    'Atchutapuram GP': [
-      'Atchutapuram',
-    ],
-    'Kamarajupeta GP': [
-      'Bhupatipalem',
-      'Kamaraju Peta',
-      'Sivaramapatnam',
-      'Sudikonda',
-    ],
-    'Gadelapalem GP': [
-      'Gadelapalem',
-    ],
-    'Gangampalem GP': [
-      'Gangampalem',
-      'Takurupalem',
-    ],
-    'Gokavaram GP': [
-      'Gokavaram',
-    ],
-    'Gummalladuddi GP': [
-      'Gummalladuddi',
-    ],
-    'Itikayala Palle GP': [
-      'Itikayala Palle',
-    ],
-    'Mallavaram GP': [
-      'Kalijolla',
-      'Mallavaram',
-    ],
-    'Kothapalle GP': [
-      'Kothapalle',
-    ],
-    'Krishnuni Palem GP': [
-      'Krishnunipalem',
-    ],
-    'Rampa Yerrampalem GP': [
-      'Rampa Yerrampalem',
-    ],
-    'Thanti Konda GP': [
-      'Thantikonda',
-    ],
-    'Tirumalayapalem GP': [
-      'Tirumalayapalem',
-    ],
-    'Vedurupaka GP': [
-      'Vedurupaka',
+    'Anaparthy GP': [
+      'Anaparthy Town',
     ],
     'Bhupalapatnam GP': [
       'Bhupalapatnam',
     ],
+    'Biccavolu GP': [
+      'Biccavolu Town',
+    ],
+    'Bolleddupalem GP': [
+      'Bolleddupalem',
+    ],
     'Burugupudi GP': [
       'Burugupudi',
     ],
-    'Jagapathinagaram GP': [
-      'Chillangi',
-      'Jagapathinagaram',
-      'Kirlampudi',
+    'Butchempeta GP': [
+      'Butchempeta',
     ],
-    'Geddanapalle GP': [
-      'Geddanapalle',
+    'Chagallu GP': [
+      'Chagallu Town',
     ],
-    'Goneda GP': [
-      'Goneda',
+    'Chinakondepudi GP': [
+      'Chinakondepudi',
     ],
-    'Krishnavaram GP': [
-      'Krishnavaram',
+    'Devarapalli GP': [
+      'Devarapalli Town',
     ],
-    'Mukkollu GP': [
-      'Mukkollu',
+    'Dosakayala Palli GP': [
+      'Dosakayala Palli',
     ],
-    'Palem GP': [
-      'Palem',
+    'Dwaraka Tirumala GP': [
+      'Dwaraka Tirumala Town',
     ],
-    'Rajupalem GP': [
-      'Rajupalem',
+    'G. Yerrampalem GP': [
+      'G. Yerrampalem',
     ],
-    'Ramachandra Puram GP': [
-      'Ramachandra Puram',
+    'Gadala GP': [
+      'Gadala',
     ],
-    'Ramakrishnapuram GP': [
-      'Ramakrishnapuram',
+    'Gadarada GP': [
+      'Gadarada',
     ],
-    'S. Thimmapuram GP': [
-      'S. Thimmapuram',
+    'Gopalapuram GP': [
+      'Gopalapuram Town',
     ],
-    'Simhadri Puram GP': [
-      'Simhadri Puram',
+    'Jagannadha Puram GP': [
+      'Jagannadha Puram',
     ],
-    'Somanarayani Peta GP': [
-      'Somanarayani Peta',
+    'Jalimudi GP': [
+      'Jalimudi',
     ],
-    'Somavaram GP': [
-      'Somavaram',
+    'Kadiam GP': [
+      'Kadiam Town',
     ],
-    'Sungarayunipalem GP': [
-      'Sungarayunipalem',
+    'Kalavacherla GP': [
+      'Kalavacherla',
     ],
-    'Thamarada GP': [
-      'Thamarada',
+    'Kanupuru GP': [
+      'Kanupuru',
     ],
-    'Veeravaram GP': [
-      'Veeravaram',
+    'Katavaram GP': [
+      'Katavaram',
     ],
-    'Velanka GP': [
-      'Velanka',
+    'Konda Gunturu GP': [
+      'Konda Gunturu',
+    ],
+    'Korukonda GP': [
+      'Atchutapuram',
+      'Jambupatnam',
+      'Kapavaram',
+      'Korukonda',
+    ],
+    'Koti GP': [
+      'Koti',
+    ],
+    'Kotikesavaram GP': [
+      'Kotikesavaram',
+    ],
+    'Kovvur GP': [
+      'Kovvur Town',
+    ],
+    'Kunavaram GP': [
+      'Kunavaram',
+    ],
+    'Mirthipadu GP': [
+      'Mirthipadu',
+    ],
+    'Muggaulla GP': [
+      'Muggaulla',
+    ],
+    'Mukkinada GP': [
+      'Mukkinada',
+    ],
+    'Mulakallanka GP': [
+      'Mulakallanka',
+    ],
+    'Munagala GP': [
+      'Munagala',
+    ],
+    'Munikudali GP': [
+      'Munikudali',
+    ],
+    'Nagampalle GP': [
+      'Nagampalle',
+    ],
+    'Nallagonda GP': [
+      'Nallagonda',
+    ],
+    'Nallajerla GP': [
+      'Nallajerla Town',
+    ],
+    'Namavaram GP': [
+      'Namavaram',
+    ],
+    'Nandarada GP': [
+      'Nandarada',
+    ],
+    'Narasapuram GP': [
+      'Narasapuram',
+    ],
+    'Narendrapuram GP': [
+      'Narendrapuram',
+    ],
+    'Nidadavole GP': [
+      'Nidadavole Town',
+    ],
+    'Palacharla GP': [
+      'Palacharla',
+    ],
+    'Pallakadiam GP': [
+      'Kanavaram',
+    ],
+    'Part-Rajahmundry Urban Mandal / RMC GP': [
+      'Part-Rajahmundry Urban Mandal / RMC Town',
+    ],
+    'Patha Thungapadu GP': [
+      'Patha Thungapadu',
+    ],
+    'Pedapudi GP': [
+      'Pedapudi Town',
+    ],
+    'Peravali GP': [
+      'Peravali Town',
+    ],
+    'Purushothapatnam GP': [
+      'Purushothapatnam',
+    ],
+    'RMC Wards 42–89 GP': [
+      'RMC Wards 42–89 Town',
+    ],
+    'RMC Wards 7–35 GP': [
+      'RMC Wards 7–35 Town',
+    ],
+    'Raghavapuram GP': [
+      'Raghavapuram',
+    ],
+    'Raghudevapuram GP': [
+      'Raghudevapuram',
+    ],
+    'Rajahmundry Rural GP': [
+      'Rajahmundry Rural Town',
+    ],
+    'Rajanagaram GP': [
+      'Jagannadhapuram Agraharam',
+      'Rajanagaram',
+    ],
+    'Rangampeta GP': [
+      'Rangampeta Town',
+    ],
+    'Seethanagaram GP': [
+      'Hundeswarapuram',
+      'Seethanagaram',
+    ],
+    'Singavaram GP': [
+      'Singavaram',
+    ],
+    'Srikrishnapatnam GP': [
+      'Srikrishnapatnam',
+    ],
+    'Srirangapatnam GP': [
+      'Srirangapatnam',
+    ],
+    'Tallapudi GP': [
+      'Tallapudi Town',
+    ],
+    'Thokada GP': [
+      'Thokada',
+    ],
+    'Undrajavaram GP': [
+      'Undrajavaram Town',
+    ],
+    'Vangalapudi GP': [
+      'Vangalapudi',
+    ],
+    'Vegeswarapuram GP': [
+      'Vegeswarapuram',
+    ],
+    'Velugubanda GP': [
+      'Velugubanda',
+    ],
+    'Venkatapuram GP': [
+      'Venkatapuram',
     ],
   };
 
