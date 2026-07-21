@@ -11,6 +11,7 @@ import '../../themes/theme_provider.dart';
 import '../../widgets/notification_bell.dart';
 import 'jobs_screen.dart';
 import '../announcements/announcement_list_screen.dart';
+import '../super_admin/meetings/meetings_list_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'my_ward_screen.dart';
@@ -533,6 +534,9 @@ class CitizenHome extends StatelessWidget {
       }},
       {'icon': Icons.campaign, 'label': loc.announcements, 'color': const Color(0xFFEF4444), 'bg': const Color(0xFFFEF2F2), 'onTap': () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const AnnouncementListScreen()));
+      }},
+      {'icon': Icons.groups, 'label': loc.meetingsEvents, 'color': const Color(0xFF10B981), 'bg': const Color(0xFFECFDF5), 'onTap': () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const MeetingsListScreen()));
       }},
     ];
 

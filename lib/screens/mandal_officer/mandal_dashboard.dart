@@ -15,6 +15,7 @@ import '../citizen/track_complaints.dart';
 import '../../utils/mandal_mapping.dart';
 import '../announcements/create_announcement_screen.dart';
 import '../announcements/broadcast_history_screen.dart';
+import '../super_admin/meetings/meetings_list_screen.dart';
 
 class MandalAdminNavHolder extends StatefulWidget {
   const MandalAdminNavHolder({super.key});
@@ -570,6 +571,20 @@ class MandalDashboardTab extends StatelessWidget {
                 }
               },
             ),
+            SectionHeader(title: 'Meetings & Events'),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeetingsListScreen())),
+              icon: const Icon(Icons.groups, size: 18),
+              label: const Text('View Meetings'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 45),
+                backgroundColor: themeConfig.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 24),
             SectionHeader(title: 'Broadcast'),
             const SizedBox(height: 12),
             Row(

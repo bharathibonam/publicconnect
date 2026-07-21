@@ -512,4 +512,334 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get fishermenWelfare => 'మత్స్యకారుల సంక్షేమం';
+
+  @override
+  String get dashboard => 'డ్యాష్‌బోర్డ్';
+
+  @override
+  String get meetingsEvents => 'సమావేశాలు & ఈవెంట్‌లు';
+
+  @override
+  String get tasksFollowUps => 'పనులు & ఫాలో అప్స్';
+
+  @override
+  String get broadcastCenter => 'ప్రసార కేంద్రం';
+
+  @override
+  String get reportsAnalytics => 'రిపోర్టులు & విశ్లేషణ';
+
+  @override
+  String get officerDirectory => 'అధికారుల డైరెక్టరీ';
+
+  @override
+  String get notifications => 'నోటిఫికేషన్‌లు';
+
+  @override
+  String get settings => 'సెట్టింగ్స్';
+
+  @override
+  String get language => 'భాష';
+
+  @override
+  String get helpSupport => 'సహాయం & మద్దతు';
+
+  @override
+  String get privacyPolicy => 'గోప్యతా విధానం';
+
+  @override
+  String get logout => 'లాగౌట్';
+
+  @override
+  String get complaints => 'ఫిర్యాదులు';
+
+  @override
+  String get polling => 'పోలింగ్';
+
+  @override
+  String get wardMember => 'వార్డు మెంబర్';
+
+  @override
+  String get ward => 'వార్డు';
+
+  @override
+  String get changePassword => 'పాస్‌వర్డ్ మార్చండి';
+
+  @override
+  String get notificationSettings => 'నోటిఫికేషన్ సెట్టింగ్‌లు';
+
+  @override
+  String get editProfile => 'ప్రొఫైల్ సవరించండి';
+
+  @override
+  String get phoneNumber => 'ఫోన్ నంబర్';
+
+  @override
+  String get cancel => 'రద్దు చేయండి';
+
+  @override
+  String get save => 'భద్రపరచు';
+
+  @override
+  String get appDrawer => 'యాప్ డ్రాయర్';
+
+  @override
+  String get overview => 'అవలోకనం';
+
+  @override
+  String get wardAtAGlance => 'వార్డు అవలోకనం';
+
+  @override
+  String get searchByIdOrCategory => 'ID లేదా కేటగిరీతో వెతకండి...';
+
+  @override
+  String get all => 'అన్నీ';
+
+  @override
+  String get population => 'జనాభా';
+
+  @override
+  String get voters => 'ఓటర్లు';
+
+  @override
+  String get pollingBooths => 'పోలింగ్ బూత్‌లు';
+
+  @override
+  String get uploadWork => 'పని అప్‌లోడ్';
+
+  @override
+  String get wardUpdates => 'వార్డు నవీకరణలు';
+
+  @override
+  String get citizens => 'పౌరులు';
+
+  @override
+  String get taskList => 'పనుల జాబితా';
+
+  @override
+  String get resolveComplaint => 'ఫిర్యాదు పరిష్కరించండి';
+
+  @override
+  String get selectComplaintToAttach =>
+      'ఈ ఫోటోను జోడించి పరిష్కరించడానికి ఫిర్యాదును ఎంచుకోండి.';
+
+  @override
+  String get selectComplaint => 'ఫిర్యాదును ఎంచుకోండి';
+
+  @override
+  String get resolve => 'పరిష్కరించండి';
+
+  @override
+  String get noPendingComplaints =>
+      'పరిష్కరించడానికి పెండింగ్ ఫిర్యాదులు లేవు.';
+
+  @override
+  String get complaintResolved => 'ఫిర్యాదు పరిష్కరించబడింది!';
+
+  @override
+  String get welcomeBack => 'మళ్లీ స్వాగతం,';
+
+  @override
+  String get pendingApprovalsUrgent => 'పెండింగ్ ఆమోదాలు & అత్యవసర ఫిర్యాదులు';
+
+  @override
+  String get inReview => 'పరిశీలనలో';
+
+  @override
+  String get noComplaintsYet => 'ఇంకా ఎలాంటి ఫిర్యాదులు లేవు';
+
+  @override
+  String get id => 'ID:';
+
+  @override
+  String get reportsAndAnalytics => 'నివేదికలు & విశ్లేషణ';
+
+  @override
+  String get complaintDistribution => 'ఫిర్యాదుల పంపిణీ';
+
+  @override
+  String get more => 'మరిన్ని';
+
+  @override
+  String get searchComplaintByKeyword =>
+      'ID లేదా కీవర్డ్ ద్వారా ఫిర్యాదును శోధించండి...';
+
+  @override
+  String get registerNewComplaint => 'కొత్త ఫిర్యాదును నమోదు చేయండి';
+
+  @override
+  String get timeline => 'కాలక్రమం';
+
+  @override
+  String get assignedOfficer => 'కేటాయించిన అధికారి';
+
+  @override
+  String get location => 'స్థానం';
+
+  @override
+  String get viewOnMap => 'మ్యాప్‌లో చూడండి';
+
+  @override
+  String get categoryWiseComplaints => 'వర్గాల వారీగా ఫిర్యాదులు';
+
+  @override
+  String get others => 'ఇతరాలు';
+
+  @override
+  String get topMandalsByComplaints => 'ఫిర్యాదుల ద్వారా టాప్ మండలాలు';
+
+  @override
+  String get wardsAndPollingStations => 'వార్డులు & పోలింగ్ కేంద్రాలు';
+
+  @override
+  String allWardStrength(Object booths) {
+    return 'మొత్తం వార్డు సామర్థ్యం ($booths బూత్‌లు)';
+  }
+
+  @override
+  String showingRecords(Object count, Object total) {
+    return '$total రికార్డులలో $count చూపుతోంది';
+  }
+
+  @override
+  String get pollingStationName => 'పోలింగ్ కేంద్రం పేరు';
+
+  @override
+  String get votesPolled => 'పోలైన ఓట్లు';
+
+  @override
+  String get percent => '%';
+
+  @override
+  String get actions => 'చర్యలు';
+
+  @override
+  String get exportExcel => 'ఎగుమతి (ఎక్సెల్)';
+
+  @override
+  String get constituencyOverview => 'నియోజకవర్గ అవలోకనం';
+
+  @override
+  String get households => 'కుటుంబాలు';
+
+  @override
+  String get pollingPercent => 'పోలింగ్ %';
+
+  @override
+  String get constituencyHierarchy => 'నియోజకవర్గ సోపానక్రమం';
+
+  @override
+  String get mpParliament => 'ఎంపీ పార్లమెంట్';
+
+  @override
+  String get village => 'గ్రామం';
+
+  @override
+  String get booth => 'బూత్';
+
+  @override
+  String get viewDetailedMap => 'వివరణాత్మక మ్యాప్‌ని చూడండి';
+
+  @override
+  String get sendAnnouncementsToCitizens => 'పౌరులకు ప్రకటనలు పంపండి';
+
+  @override
+  String get recentBroadcasts => 'ఇటీవలి ప్రసారాలు';
+
+  @override
+  String get quickBroadcast => 'శీఘ్ర ప్రసారం';
+
+  @override
+  String get textMessage => 'టెక్స్ట్ సందేశం';
+
+  @override
+  String get image => 'చిత్రం';
+
+  @override
+  String get video => 'వీడియో';
+
+  @override
+  String get document => 'పత్రం';
+
+  @override
+  String get upcoming => 'రాబోయే';
+
+  @override
+  String get completed => 'పూర్తయింది';
+
+  @override
+  String get myMeetings => 'నా సమావేశాలు';
+
+  @override
+  String get viewDetails => 'వివరాలను చూడండి';
+
+  @override
+  String get addNewMeeting => 'కొత్త సమావేశాన్ని జోడించండి';
+
+  @override
+  String get myTasks => 'నా పనులు';
+
+  @override
+  String get allTasks => 'అన్ని పనులు';
+
+  @override
+  String get viewAllTasks => 'అన్ని పనులను చూడండి';
+
+  @override
+  String get aiAssistant => 'AI అసిస్టెంట్';
+
+  @override
+  String get yourSmartGovernanceAssistant =>
+      'మీ స్మార్ట్ గవర్నెన్స్ అసిస్టెంట్';
+
+  @override
+  String get howCanIHelpYouToday => 'నేను ఈ రోజు మీకు ఎలా సహాయం చేయగలను?';
+
+  @override
+  String get youCanAskMeAbout =>
+      'మీరు ఫిర్యాదులు, నివేదికలు, పోలింగ్ డేటా, పనులు మరియు మరిన్నింటి గురించి నన్ను అడగవచ్చు.';
+
+  @override
+  String get showThisMonthComplaints => 'ఈ నెల ఫిర్యాదులను చూపించు';
+
+  @override
+  String get boothPerformanceReport => 'బూత్ పనితీరు నివేదిక';
+
+  @override
+  String get upcomingMeetings => 'రాబోయే సమావేశాలు';
+
+  @override
+  String get typeYourQuestion => 'మీ ప్రశ్నను టైప్ చేయండి...';
+
+  @override
+  String get emergencySos => 'అత్యవసర SOS';
+
+  @override
+  String get tapToAlertAuthorities => 'అధికారులను అప్రమత్తం చేయడానికి నొక్కండి';
+
+  @override
+  String get profileInformation => 'ప్రొఫైల్ సమాచారం';
+
+  @override
+  String get appTheme => 'యాప్ థీమ్';
+
+  @override
+  String get termsAndConditions => 'నిబంధనలు & షరతులు';
+
+  @override
+  String get aboutUs => 'మా గురించి';
+
+  @override
+  String get broadcastShortcuts => 'ప్రసార షార్ట్‌కట్‌లు';
+
+  @override
+  String get emergencyAndSupport => 'అత్యవసర & మద్దతు';
+
+  @override
+  String get constituencyAtAGlance => 'నియోజకవర్గం ఒక చూపులో';
+
+  @override
+  String get mandal => 'మండలం';
+
+  @override
+  String get villages => 'గ్రామాలు';
 }

@@ -16,6 +16,7 @@ import '../models/announcement_read.dart';
 import '../models/work_update.dart';
 import '../models/completed_work.dart';
 import '../models/app_config.dart';
+import '../models/meeting.dart';
 import '../utils/category_mapping.dart';
 import '../utils/mandal_mapping.dart';
 import 'supabase_service.dart';
@@ -88,6 +89,7 @@ class AppState extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   List<BroadcastAlert> _broadcasts = [];
   List<Announcement> _announcements = [];
+  List<Meeting> _meetings = [];
   AppConfig? _appConfig;
 
   User? _currentUser;
@@ -120,6 +122,7 @@ class AppState extends ChangeNotifier {
   }
 
   List<Announcement> get announcements => List.unmodifiable(_announcements);
+  List<Meeting> get meetings => List.unmodifiable(_meetings);
 
   List<Announcement> getVisibleAnnouncements() {
     if (_currentUser == null) return [];
@@ -253,6 +256,7 @@ class AppState extends ChangeNotifier {
   StreamSubscription? _wardUpdatesSub;
   StreamSubscription? _completedWorksSub;
   StreamSubscription<List<AppNotification>>? _notificationsSub;
+  StreamSubscription<List<Meeting>>? _meetingsSub;
 
   AppState() {
     _init();
@@ -612,6 +616,12 @@ class AppState extends ChangeNotifier {
           }
           notifyListeners();
         }, onError: (e) => debugPrint('Notifications stream error: $e'));
+        
+    _meetingsSub?.cancel();
+    _meetingsSub = SupabaseService.streamMeetings(userId, _currentUser!.role.name).listen((data) {
+      _meetings = data;
+      notifyListeners();
+    }, onError: (e) => debugPrint('Meetings stream error: $e'));
   }
 
   @override
@@ -625,6 +635,7 @@ class AppState extends ChangeNotifier {
     _wardUpdatesSub?.cancel();
     _completedWorksSub?.cancel();
     _notificationsSub?.cancel();
+    _meetingsSub?.cancel();
     _connectionStatusController.close();
     _pushNotificationController.close();
     super.dispose();

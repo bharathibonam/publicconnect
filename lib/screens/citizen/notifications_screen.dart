@@ -6,6 +6,8 @@ import '../../models/app_notification.dart';
 import '../announcements/announcement_details_screen.dart';
 import '../ward_admin/completed_work_details_screen.dart';
 import 'my_ward_screen.dart';
+import '../super_admin/meetings/meeting_details_screen.dart';
+import '../../../themes/theme_provider.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -195,6 +197,21 @@ class NotificationsScreen extends StatelessWidget {
       Navigator.pop(context);
       appState.setHighlightedComplaintId(notif.complaintId);
       appState.setCitizenTabIndex(3);
+    } else if (notif.effectiveType == 'meeting') {
+      final meetingId = notif.referenceId ?? notif.complaintId;
+      if (meetingId != null) {
+        try {
+          final meeting = appState.meetings.firstWhere((m) => m.id == meetingId);
+          final themeConfig = Provider.of<ThemeProvider>(context, listen: false).activeParty;
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => MeetingDetailsScreen(meeting: meeting, themeConfig: themeConfig),
+          ));
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Meeting not found or has been deleted.')));
+          }
+        }
+      }
     } else {
       Navigator.pop(context);
     }
@@ -232,6 +249,13 @@ class NotificationsScreen extends StatelessWidget {
           color: const Color(0xFF1565C0),
           bgColor: const Color(0xFFE3F2FD),
           label: 'Complaint Update',
+        );
+      case 'meeting':
+        return _TileConfig(
+          icon: Icons.groups,
+          color: const Color(0xFF7C3AED),
+          bgColor: const Color(0xFFF3E8FF),
+          label: 'Meeting',
         );
       default:
         return _TileConfig(

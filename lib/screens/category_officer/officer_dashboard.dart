@@ -18,6 +18,7 @@ import '../../utils/quick_action_helpers.dart';
 
 import '../announcements/create_announcement_screen.dart';
 import '../announcements/broadcast_history_screen.dart';
+import '../super_admin/meetings/meetings_list_screen.dart';
 
 class OfficerNavHolder extends StatefulWidget {
   const OfficerNavHolder({super.key});
@@ -461,6 +462,9 @@ class _OfficerDashboardTabState extends State<OfficerDashboardTab> {
                   }),
                   _buildQuickActionBtn(Icons.picture_as_pdf, l10n.generateReport, themeConfig.primaryColor, () {
                     QuickActionHelpers.handleGenerateReport(context, appState, themeConfig);
+                  }),
+                  _buildQuickActionBtn(Icons.groups, l10n.meetingsEvents, themeConfig.primaryColor, () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MeetingsListScreen()));
                   }),
                 ],
               ),

@@ -512,4 +512,331 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fishermenWelfare => 'Fishermen Welfare';
+
+  @override
+  String get dashboard => 'Dashboard';
+
+  @override
+  String get meetingsEvents => 'Meetings & Events';
+
+  @override
+  String get tasksFollowUps => 'Tasks & Follow Ups';
+
+  @override
+  String get broadcastCenter => 'Broadcast Center';
+
+  @override
+  String get reportsAnalytics => 'Reports & Analytics';
+
+  @override
+  String get officerDirectory => 'Officer Directory';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get helpSupport => 'Help & Support';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get complaints => 'Complaints';
+
+  @override
+  String get polling => 'Polling';
+
+  @override
+  String get wardMember => 'Ward Member';
+
+  @override
+  String get ward => 'Ward';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get notificationSettings => 'Notification Settings';
+
+  @override
+  String get editProfile => 'Edit Profile';
+
+  @override
+  String get phoneNumber => 'Phone Number';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get appDrawer => 'App Drawer';
+
+  @override
+  String get overview => 'Overview';
+
+  @override
+  String get wardAtAGlance => 'Ward At a Glance';
+
+  @override
+  String get searchByIdOrCategory => 'Search by ID or Category...';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get population => 'Population';
+
+  @override
+  String get voters => 'Voters';
+
+  @override
+  String get pollingBooths => 'Polling Booths';
+
+  @override
+  String get uploadWork => 'Upload Work';
+
+  @override
+  String get wardUpdates => 'Ward Updates';
+
+  @override
+  String get citizens => 'Citizens';
+
+  @override
+  String get taskList => 'Task List';
+
+  @override
+  String get resolveComplaint => 'Resolve Complaint';
+
+  @override
+  String get selectComplaintToAttach =>
+      'Select a complaint to attach this photo and resolve.';
+
+  @override
+  String get selectComplaint => 'Select Complaint';
+
+  @override
+  String get resolve => 'Resolve';
+
+  @override
+  String get noPendingComplaints => 'No pending complaints to resolve.';
+
+  @override
+  String get complaintResolved => 'Complaint resolved!';
+
+  @override
+  String get welcomeBack => 'Welcome Back,';
+
+  @override
+  String get pendingApprovalsUrgent => 'Pending approvals & Urgent complaints';
+
+  @override
+  String get inReview => 'In Review';
+
+  @override
+  String get noComplaintsYet => 'No complaints yet';
+
+  @override
+  String get id => 'ID:';
+
+  @override
+  String get reportsAndAnalytics => 'Reports & Analytics';
+
+  @override
+  String get complaintDistribution => 'Complaint Distribution';
+
+  @override
+  String get more => 'More';
+
+  @override
+  String get searchComplaintByKeyword => 'Search complaint by ID or keyword...';
+
+  @override
+  String get registerNewComplaint => 'Register New Complaint';
+
+  @override
+  String get timeline => 'Timeline';
+
+  @override
+  String get assignedOfficer => 'Assigned Officer';
+
+  @override
+  String get location => 'Location';
+
+  @override
+  String get viewOnMap => 'View on Map';
+
+  @override
+  String get categoryWiseComplaints => 'Category Wise Complaints';
+
+  @override
+  String get others => 'Others';
+
+  @override
+  String get topMandalsByComplaints => 'Top Mandals by Complaints';
+
+  @override
+  String get wardsAndPollingStations => 'Wards & Polling Stations';
+
+  @override
+  String allWardStrength(Object booths) {
+    return 'All Ward Strength ($booths Booths)';
+  }
+
+  @override
+  String showingRecords(Object count, Object total) {
+    return 'Showing $count of $total Records';
+  }
+
+  @override
+  String get pollingStationName => 'POLLING STATION NAME';
+
+  @override
+  String get votesPolled => 'VOTES POLLED';
+
+  @override
+  String get percent => '%';
+
+  @override
+  String get actions => 'ACTIONS';
+
+  @override
+  String get exportExcel => 'Export (Excel)';
+
+  @override
+  String get constituencyOverview => 'Constituency Overview';
+
+  @override
+  String get households => 'Households';
+
+  @override
+  String get pollingPercent => 'Polling %';
+
+  @override
+  String get constituencyHierarchy => 'Constituency Hierarchy';
+
+  @override
+  String get mpParliament => 'MP Parliament';
+
+  @override
+  String get village => 'Village';
+
+  @override
+  String get booth => 'Booth';
+
+  @override
+  String get viewDetailedMap => 'View Detailed Map';
+
+  @override
+  String get sendAnnouncementsToCitizens => 'Send announcements to citizens';
+
+  @override
+  String get recentBroadcasts => 'Recent Broadcasts';
+
+  @override
+  String get quickBroadcast => 'Quick Broadcast';
+
+  @override
+  String get textMessage => 'Text Message';
+
+  @override
+  String get image => 'Image';
+
+  @override
+  String get video => 'Video';
+
+  @override
+  String get document => 'Document';
+
+  @override
+  String get upcoming => 'Upcoming';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get myMeetings => 'My Meetings';
+
+  @override
+  String get viewDetails => 'View Details';
+
+  @override
+  String get addNewMeeting => 'Add New Meeting';
+
+  @override
+  String get myTasks => 'My Tasks';
+
+  @override
+  String get allTasks => 'All Tasks';
+
+  @override
+  String get viewAllTasks => 'View All Tasks';
+
+  @override
+  String get aiAssistant => 'AI Assistant';
+
+  @override
+  String get yourSmartGovernanceAssistant => 'Your smart governance assistant';
+
+  @override
+  String get howCanIHelpYouToday => 'How can I help you today?';
+
+  @override
+  String get youCanAskMeAbout =>
+      'You can ask me about complaints, reports, polling data, tasks and more.';
+
+  @override
+  String get showThisMonthComplaints => 'Show this month complaints';
+
+  @override
+  String get boothPerformanceReport => 'Booth performance report';
+
+  @override
+  String get upcomingMeetings => 'Upcoming meetings';
+
+  @override
+  String get typeYourQuestion => 'Type your question...';
+
+  @override
+  String get emergencySos => 'Emergency SOS';
+
+  @override
+  String get tapToAlertAuthorities => 'Tap to alert authorities';
+
+  @override
+  String get profileInformation => 'Profile Information';
+
+  @override
+  String get appTheme => 'App Theme';
+
+  @override
+  String get termsAndConditions => 'Terms & Conditions';
+
+  @override
+  String get aboutUs => 'About Us';
+
+  @override
+  String get broadcastShortcuts => 'Broadcast Shortcuts';
+
+  @override
+  String get emergencyAndSupport => 'Emergency & Support';
+
+  @override
+  String get constituencyAtAGlance => 'Constituency At a Glance';
+
+  @override
+  String get mandal => 'Mandal';
+
+  @override
+  String get villages => 'Villages';
 }

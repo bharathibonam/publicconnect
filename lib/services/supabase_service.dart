@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 import '../models/complaint.dart';
 import '../models/user.dart';
@@ -14,6 +15,7 @@ import '../models/announcement_read.dart';
 import '../models/work_update.dart';
 import '../models/app_notification.dart';
 import '../models/completed_work.dart';
+import '../models/meeting.dart';
 class SupabaseService {
   static SupabaseClient get _db => Supabase.instance.client;
 
@@ -933,5 +935,210 @@ class SupabaseService {
     } catch (e) {
       debugPrint('Error batch inserting notifications: $e');
     }
+  }
+
+  // ───────────────── MEETINGS ─────────────────
+  
+  static Future<Meeting> createMeeting(Meeting meeting) async {
+    final Map<String, dynamic> meetingData = meeting.toJson();
+    meetingData.remove('id'); // DB will generate it
+    
+    final response = await _db.from('meetings').insert(meetingData).select().single();
+    final newMeeting = Meeting.fromJson(response);
+    
+    // Insert targets
+    if (meeting.targetRoles.isNotEmpty) {
+      final targets = meeting.targetRoles.map((role) => {
+        'meeting_id': newMeeting.id,
+        'target_role': role,
+      }).toList();
+      await _db.from('meeting_targets').insert(targets);
+      
+      // Also create notifications for the target roles
+      // Usually you'd do this via a trigger, but if we want it here:
+      final List<Map<String, dynamic>> notifications = [];
+      // Fetch users belonging to targetRoles to send notification to them.
+      // (This is a simplified approach; a real app might use a trigger or Edge Function)
+      // Since it's requested to create push notifications exactly like Broadcast, 
+      // we'll rely on the existing batchInsertNotifications.
+      final dateStr = DateFormat('MMM dd, yyyy').format(newMeeting.date);
+      final venueStr = (newMeeting.venue != null && newMeeting.venue!.isNotEmpty) ? ' | Venue: ${newMeeting.venue}' : '';
+      final bodyStr = '${newMeeting.title}\nDate: $dateStr | Time: ${newMeeting.startTime}$venueStr';
+
+      final usersResponse = await _db.from('users').select('id, role');
+      for (var u in usersResponse) {
+        if (meeting.targetRoles.contains('All Users') || meeting.targetRoles.any((r) => SupabaseService._matchRole(r, u['role'].toString()))) {
+          notifications.add({
+            'id': 'notif_${DateTime.now().millisecondsSinceEpoch}_${u['id'].hashCode}',
+            'userId': u['id'],
+            'title': 'New Meeting Scheduled',
+            'body': bodyStr,
+            'type': 'meeting',
+            'reference_id': newMeeting.id,
+            'isRead': false,
+            'createdAt': DateTime.now().toUtc().toIso8601String()
+          });
+        }
+      }
+      if (notifications.isNotEmpty) {
+        await _db.from('notifications').insert(notifications);
+      }
+    }
+    
+    return Meeting(
+      id: newMeeting.id,
+      title: newMeeting.title,
+      date: newMeeting.date,
+      startTime: newMeeting.startTime,
+      endTime: newMeeting.endTime,
+      createdBy: newMeeting.createdBy,
+      createdAt: newMeeting.createdAt,
+      description: newMeeting.description,
+      purpose: newMeeting.purpose,
+      venue: newMeeting.venue,
+      meetLink: newMeeting.meetLink,
+      location: newMeeting.location,
+      agenda: newMeeting.agenda,
+      attachmentUrl: newMeeting.attachmentUrl,
+      imageUrl: newMeeting.imageUrl,
+      priority: newMeeting.priority,
+      isReminderEnabled: newMeeting.isReminderEnabled,
+      status: newMeeting.status,
+      targetRoles: meeting.targetRoles,
+    );
+  }
+
+  static Future<List<Meeting>> fetchMeetings(String userId, String userRole) async {
+    final List<Map<String, dynamic>> response = await _db
+        .from('meetings')
+        .select('*, meeting_targets(target_role)')
+        .order('date', ascending: true);
+        
+    final allMeetings = response.map((json) => Meeting.fromJson(json)).toList();
+    
+    if (userRole.toLowerCase() == 'superadmin' || userRole.toLowerCase() == 'super admin') return allMeetings;
+    
+    return allMeetings.where((m) {
+      return m.createdBy == userId || 
+             m.targetRoles.any((r) => SupabaseService._matchRole(r, userRole)) ||
+             m.targetRoles.contains('All Users');
+    }).toList();
+  }
+  
+  static Stream<List<Meeting>> streamMeetings(String userId, String userRole) {
+    return _db.from('meetings').stream(primaryKey: ['id']).order('date', ascending: true).asyncMap((event) async {
+      // Need to fetch targets and attendance since stream doesn't join
+      final targetsResponse = await _db.from('meeting_targets').select();
+      final attendanceResponse = await _db.from('meeting_attendance').select();
+      
+      return event.map((json) {
+        final meetingId = json['id'] as String;
+        final meetingTargets = targetsResponse.where((t) => t['meeting_id'] == meetingId).toList();
+        final meetingAttendance = attendanceResponse.where((a) => a['meeting_id'] == meetingId).toList();
+        json['meeting_targets'] = meetingTargets;
+        json['meeting_attendance'] = meetingAttendance;
+        return Meeting.fromJson(json);
+      }).where((m) {
+        if (userRole.toLowerCase() == 'superadmin' || userRole.toLowerCase() == 'super admin') return true;
+        return m.createdBy == userId || 
+               m.targetRoles.any((r) => SupabaseService._matchRole(r, userRole)) ||
+               m.targetRoles.contains('All Users');
+      }).toList();
+    });
+  }
+
+  static Future<void> updateMeeting(Meeting meeting) async {
+    final Map<String, dynamic> meetingData = meeting.toJson();
+    meetingData.remove('id'); // don't update ID
+    
+    await _db.from('meetings').update(meetingData).eq('id', meeting.id);
+    
+    // update targets
+    await _db.from('meeting_targets').delete().eq('meeting_id', meeting.id);
+    if (meeting.targetRoles.isNotEmpty) {
+      final targets = meeting.targetRoles.map((role) => {
+        'meeting_id': meeting.id,
+        'target_role': role,
+      }).toList();
+      await _db.from('meeting_targets').insert(targets);
+    }
+  }
+
+  static Future<void> deleteMeeting(String meetingId) async {
+    await _db.from('meetings').delete().eq('id', meetingId);
+  }
+
+  static Future<void> updateMeetingStatus(String meetingId, String status, {List<String>? targetRoles, String? meetingTitle}) async {
+    await _db.from('meetings').update({'status': status, 'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('id', meetingId);
+
+    if (targetRoles != null && meetingTitle != null && (status == 'cancelled' || status == 'completed')) {
+      final List<Map<String, dynamic>> notifications = [];
+      final usersResponse = await _db.from('users').select('id, role');
+      
+      final title = status == 'cancelled' ? 'Meeting Cancelled' : 'Meeting Completed';
+      final body = status == 'cancelled' ? 'The meeting "$meetingTitle" has been cancelled.' : 'The meeting "$meetingTitle" has been marked as completed.';
+      
+      for (var u in usersResponse) {
+        if (targetRoles.contains('All Users') || targetRoles.any((r) => SupabaseService._matchRole(r, u['role'].toString()))) {
+          notifications.add({
+            'id': 'notif_${DateTime.now().millisecondsSinceEpoch}_${u['id'].hashCode}',
+            'userId': u['id'],
+            'title': title,
+            'body': body,
+            'type': 'meeting',
+            'reference_id': meetingId,
+            'isRead': false,
+            'createdAt': DateTime.now().toUtc().toIso8601String()
+          });
+        }
+      }
+      
+      if (notifications.isNotEmpty) {
+        await _db.from('notifications').insert(notifications);
+      }
+    }
+  }
+
+  static Future<void> updateMeetingAttendance(String meetingId, String userId, String status) async {
+    final response = await _db.from('meeting_attendance').select().eq('meeting_id', meetingId).eq('user_id', userId).maybeSingle();
+    
+    if (response != null) {
+      await _db.from('meeting_attendance').update({
+        'status': status,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', response['id']);
+    } else {
+      await _db.from('meeting_attendance').insert({
+        'meeting_id': meetingId,
+        'user_id': userId,
+        'status': status,
+      });
+    }
+    
+    // Touch the meeting to trigger a realtime update on the meetings stream
+    await _db.from('meetings').update({'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('id', meetingId);
+  }
+
+  static Future<String?> uploadMeetingAttachment(File file, String filename) async {
+    try {
+      final ext = file.path.split('.').last;
+      final uniqueName = '${filename}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      await _db.storage.from('app_assets').upload('meetings/$uniqueName', file);
+      return _db.storage.from('app_assets').getPublicUrl('meetings/$uniqueName');
+    } catch (e) {
+      debugPrint('Error uploading meeting attachment: $e');
+      return null;
+    }
+  }
+
+  static String normalizeRole(String role) {
+    String normalized = role.trim().toLowerCase().replaceAll(' ', '').replaceAll('_', '');
+    if (normalized == 'wardadmin') return 'wardmember';
+    return normalized;
+  }
+
+  static bool _matchRole(String targetRole, String userRole) {
+    if (targetRole.toLowerCase().replaceAll(' ', '') == 'allusers') return true;
+    return normalizeRole(targetRole) == normalizeRole(userRole);
   }
 }

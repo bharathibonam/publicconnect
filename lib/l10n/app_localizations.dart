@@ -1099,6 +1099,648 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fishermen Welfare'**
   String get fishermenWelfare;
+
+  /// No description provided for @dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashboard;
+
+  /// No description provided for @meetingsEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetings & Events'**
+  String get meetingsEvents;
+
+  /// No description provided for @tasksFollowUps.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks & Follow Ups'**
+  String get tasksFollowUps;
+
+  /// No description provided for @broadcastCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast Center'**
+  String get broadcastCenter;
+
+  /// No description provided for @reportsAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports & Analytics'**
+  String get reportsAnalytics;
+
+  /// No description provided for @officerDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Officer Directory'**
+  String get officerDirectory;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @helpSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support'**
+  String get helpSupport;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// No description provided for @complaints.
+  ///
+  /// In en, this message translates to:
+  /// **'Complaints'**
+  String get complaints;
+
+  /// No description provided for @polling.
+  ///
+  /// In en, this message translates to:
+  /// **'Polling'**
+  String get polling;
+
+  /// No description provided for @wardMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Ward Member'**
+  String get wardMember;
+
+  /// No description provided for @ward.
+  ///
+  /// In en, this message translates to:
+  /// **'Ward'**
+  String get ward;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePassword;
+
+  /// No description provided for @notificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Settings'**
+  String get notificationSettings;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get editProfile;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phoneNumber;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @appDrawer.
+  ///
+  /// In en, this message translates to:
+  /// **'App Drawer'**
+  String get appDrawer;
+
+  /// No description provided for @overview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get overview;
+
+  /// No description provided for @wardAtAGlance.
+  ///
+  /// In en, this message translates to:
+  /// **'Ward At a Glance'**
+  String get wardAtAGlance;
+
+  /// No description provided for @searchByIdOrCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by ID or Category...'**
+  String get searchByIdOrCategory;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @population.
+  ///
+  /// In en, this message translates to:
+  /// **'Population'**
+  String get population;
+
+  /// No description provided for @voters.
+  ///
+  /// In en, this message translates to:
+  /// **'Voters'**
+  String get voters;
+
+  /// No description provided for @pollingBooths.
+  ///
+  /// In en, this message translates to:
+  /// **'Polling Booths'**
+  String get pollingBooths;
+
+  /// No description provided for @uploadWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Work'**
+  String get uploadWork;
+
+  /// No description provided for @wardUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Ward Updates'**
+  String get wardUpdates;
+
+  /// No description provided for @citizens.
+  ///
+  /// In en, this message translates to:
+  /// **'Citizens'**
+  String get citizens;
+
+  /// No description provided for @taskList.
+  ///
+  /// In en, this message translates to:
+  /// **'Task List'**
+  String get taskList;
+
+  /// No description provided for @resolveComplaint.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve Complaint'**
+  String get resolveComplaint;
+
+  /// No description provided for @selectComplaintToAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a complaint to attach this photo and resolve.'**
+  String get selectComplaintToAttach;
+
+  /// No description provided for @selectComplaint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Complaint'**
+  String get selectComplaint;
+
+  /// No description provided for @resolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve'**
+  String get resolve;
+
+  /// No description provided for @noPendingComplaints.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending complaints to resolve.'**
+  String get noPendingComplaints;
+
+  /// No description provided for @complaintResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Complaint resolved!'**
+  String get complaintResolved;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome Back,'**
+  String get welcomeBack;
+
+  /// No description provided for @pendingApprovalsUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending approvals & Urgent complaints'**
+  String get pendingApprovalsUrgent;
+
+  /// No description provided for @inReview.
+  ///
+  /// In en, this message translates to:
+  /// **'In Review'**
+  String get inReview;
+
+  /// No description provided for @noComplaintsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No complaints yet'**
+  String get noComplaintsYet;
+
+  /// No description provided for @id.
+  ///
+  /// In en, this message translates to:
+  /// **'ID:'**
+  String get id;
+
+  /// No description provided for @reportsAndAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports & Analytics'**
+  String get reportsAndAnalytics;
+
+  /// No description provided for @complaintDistribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Complaint Distribution'**
+  String get complaintDistribution;
+
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
+  /// No description provided for @searchComplaintByKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Search complaint by ID or keyword...'**
+  String get searchComplaintByKeyword;
+
+  /// No description provided for @registerNewComplaint.
+  ///
+  /// In en, this message translates to:
+  /// **'Register New Complaint'**
+  String get registerNewComplaint;
+
+  /// No description provided for @timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get timeline;
+
+  /// No description provided for @assignedOfficer.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned Officer'**
+  String get assignedOfficer;
+
+  /// No description provided for @location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get location;
+
+  /// No description provided for @viewOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'View on Map'**
+  String get viewOnMap;
+
+  /// No description provided for @categoryWiseComplaints.
+  ///
+  /// In en, this message translates to:
+  /// **'Category Wise Complaints'**
+  String get categoryWiseComplaints;
+
+  /// No description provided for @others.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get others;
+
+  /// No description provided for @topMandalsByComplaints.
+  ///
+  /// In en, this message translates to:
+  /// **'Top Mandals by Complaints'**
+  String get topMandalsByComplaints;
+
+  /// No description provided for @wardsAndPollingStations.
+  ///
+  /// In en, this message translates to:
+  /// **'Wards & Polling Stations'**
+  String get wardsAndPollingStations;
+
+  /// No description provided for @allWardStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'All Ward Strength ({booths} Booths)'**
+  String allWardStrength(Object booths);
+
+  /// No description provided for @showingRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {count} of {total} Records'**
+  String showingRecords(Object count, Object total);
+
+  /// No description provided for @pollingStationName.
+  ///
+  /// In en, this message translates to:
+  /// **'POLLING STATION NAME'**
+  String get pollingStationName;
+
+  /// No description provided for @votesPolled.
+  ///
+  /// In en, this message translates to:
+  /// **'VOTES POLLED'**
+  String get votesPolled;
+
+  /// No description provided for @percent.
+  ///
+  /// In en, this message translates to:
+  /// **'%'**
+  String get percent;
+
+  /// No description provided for @actions.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIONS'**
+  String get actions;
+
+  /// No description provided for @exportExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export (Excel)'**
+  String get exportExcel;
+
+  /// No description provided for @constituencyOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Constituency Overview'**
+  String get constituencyOverview;
+
+  /// No description provided for @households.
+  ///
+  /// In en, this message translates to:
+  /// **'Households'**
+  String get households;
+
+  /// No description provided for @pollingPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Polling %'**
+  String get pollingPercent;
+
+  /// No description provided for @constituencyHierarchy.
+  ///
+  /// In en, this message translates to:
+  /// **'Constituency Hierarchy'**
+  String get constituencyHierarchy;
+
+  /// No description provided for @mpParliament.
+  ///
+  /// In en, this message translates to:
+  /// **'MP Parliament'**
+  String get mpParliament;
+
+  /// No description provided for @village.
+  ///
+  /// In en, this message translates to:
+  /// **'Village'**
+  String get village;
+
+  /// No description provided for @booth.
+  ///
+  /// In en, this message translates to:
+  /// **'Booth'**
+  String get booth;
+
+  /// No description provided for @viewDetailedMap.
+  ///
+  /// In en, this message translates to:
+  /// **'View Detailed Map'**
+  String get viewDetailedMap;
+
+  /// No description provided for @sendAnnouncementsToCitizens.
+  ///
+  /// In en, this message translates to:
+  /// **'Send announcements to citizens'**
+  String get sendAnnouncementsToCitizens;
+
+  /// No description provided for @recentBroadcasts.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Broadcasts'**
+  String get recentBroadcasts;
+
+  /// No description provided for @quickBroadcast.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Broadcast'**
+  String get quickBroadcast;
+
+  /// No description provided for @textMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Message'**
+  String get textMessage;
+
+  /// No description provided for @image.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get image;
+
+  /// No description provided for @video.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get video;
+
+  /// No description provided for @document.
+  ///
+  /// In en, this message translates to:
+  /// **'Document'**
+  String get document;
+
+  /// No description provided for @upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get upcoming;
+
+  /// No description provided for @completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// No description provided for @myMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'My Meetings'**
+  String get myMeetings;
+
+  /// No description provided for @viewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetails;
+
+  /// No description provided for @addNewMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Meeting'**
+  String get addNewMeeting;
+
+  /// No description provided for @myTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'My Tasks'**
+  String get myTasks;
+
+  /// No description provided for @allTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'All Tasks'**
+  String get allTasks;
+
+  /// No description provided for @viewAllTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'View All Tasks'**
+  String get viewAllTasks;
+
+  /// No description provided for @aiAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get aiAssistant;
+
+  /// No description provided for @yourSmartGovernanceAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Your smart governance assistant'**
+  String get yourSmartGovernanceAssistant;
+
+  /// No description provided for @howCanIHelpYouToday.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I help you today?'**
+  String get howCanIHelpYouToday;
+
+  /// No description provided for @youCanAskMeAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'You can ask me about complaints, reports, polling data, tasks and more.'**
+  String get youCanAskMeAbout;
+
+  /// No description provided for @showThisMonthComplaints.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this month complaints'**
+  String get showThisMonthComplaints;
+
+  /// No description provided for @boothPerformanceReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Booth performance report'**
+  String get boothPerformanceReport;
+
+  /// No description provided for @upcomingMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming meetings'**
+  String get upcomingMeetings;
+
+  /// No description provided for @typeYourQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your question...'**
+  String get typeYourQuestion;
+
+  /// No description provided for @emergencySos.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency SOS'**
+  String get emergencySos;
+
+  /// No description provided for @tapToAlertAuthorities.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to alert authorities'**
+  String get tapToAlertAuthorities;
+
+  /// No description provided for @profileInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Information'**
+  String get profileInformation;
+
+  /// No description provided for @appTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'App Theme'**
+  String get appTheme;
+
+  /// No description provided for @termsAndConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms & Conditions'**
+  String get termsAndConditions;
+
+  /// No description provided for @aboutUs.
+  ///
+  /// In en, this message translates to:
+  /// **'About Us'**
+  String get aboutUs;
+
+  /// No description provided for @broadcastShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast Shortcuts'**
+  String get broadcastShortcuts;
+
+  /// No description provided for @emergencyAndSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency & Support'**
+  String get emergencyAndSupport;
+
+  /// No description provided for @constituencyAtAGlance.
+  ///
+  /// In en, this message translates to:
+  /// **'Constituency At a Glance'**
+  String get constituencyAtAGlance;
+
+  /// No description provided for @mandal.
+  ///
+  /// In en, this message translates to:
+  /// **'Mandal'**
+  String get mandal;
+
+  /// No description provided for @villages.
+  ///
+  /// In en, this message translates to:
+  /// **'Villages'**
+  String get villages;
 }
 
 class _AppLocalizationsDelegate
