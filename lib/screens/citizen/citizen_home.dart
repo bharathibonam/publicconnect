@@ -6,6 +6,7 @@ import '../../services/app_state.dart';
 import '../../models/complaint.dart';
 import '../../models/broadcast_alert.dart';
 import '../../models/work_update.dart';
+import '../../models/user.dart';
 import '../../themes/party_theme_config.dart';
 import '../../themes/theme_provider.dart';
 import '../../widgets/notification_bell.dart';
@@ -17,6 +18,7 @@ import 'dart:io';
 import 'my_ward_screen.dart';
 import 'citizen_services_screen.dart';
 import 'welfare_schemes_screen.dart';
+import 'mla_updates_feed.dart';
 
 class CitizenHome extends StatelessWidget {
   final VoidCallback onFileComplaintPressed;
@@ -70,50 +72,42 @@ class CitizenHome extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildHeroCard(context, activeParty, appState, loc),
-                    const SizedBox(height: 24),
-                    _buildStatisticsSection(context, total, resolved, pending, 12450, loc),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
+                    _buildStatisticsSection(context, loc),
+                    const SizedBox(height: 20),
                     
                     if (filteredWorkUpdates.isNotEmpty) ...[
                       _buildSectionTitle(appState.isTelugu ? 'పూర్తయిన పనులు' : 'Development Works', activeParty),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       _buildWorkUpdatesList(filteredWorkUpdates, activeParty, appState.isTelugu),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 20),
                     ],
 
                     if (filteredBroadcasts.isNotEmpty) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildSectionTitle(loc.mlaAnnouncements, activeParty),
-                          Text(
-                            loc.viewAll,
-                            style: TextStyle(color: activeParty.primaryColor, fontWeight: FontWeight.bold, fontSize: 12),
-                          ),
-                        ],
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _buildSectionTitle(loc.mlaAnnouncements, activeParty),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       BroadcastCarousel(broadcasts: filteredBroadcasts, activeParty: activeParty),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 20),
                     ],
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildSectionTitle(loc.complaintDashboard, activeParty),
-                      ],
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _buildSectionTitle(loc.complaintDashboard, activeParty),
                     ),
-                    const SizedBox(height: 16),
-                    _buildComplaintStatusSummary(submitted, pending, inProgress, resolved, loc),
-                    const SizedBox(height: 16),
-                    _buildComplaintList(complaints, activeParty, loc),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 12),
+                    _buildComplaintStatusSummary(submitted, pending, inProgress, resolved, loc, appState, context),
+                    const SizedBox(height: 12),
+                    _buildComplaintList(complaints, activeParty, loc, appState, context),
+                    const SizedBox(height: 20),
                     
                     _buildSectionTitle(loc.supportSection, activeParty),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     _buildSupportSection(activeParty, loc),
                     
-                    const SizedBox(height: 120), // Prevent FAB overlap
+                    const SizedBox(height: 80), // Balanced FAB & BottomNav clearance
                   ],
                 ),
               ),
@@ -454,60 +448,103 @@ class CitizenHome extends StatelessWidget {
     );
   }
 
-  Widget _buildStatisticsSection(BuildContext context, int total, int resolved, int pending, int served, AppLocalizations loc) {
+  Widget _buildStatisticsSection(BuildContext context, AppLocalizations loc) {
+    final appState = Provider.of<AppState>(context);
+    final now = DateTime.now();
+
+    final citizensCount = appState.users.where((u) => u.role == UserRole.citizen).length;
+    final citizensDisplay = citizensCount > 0 ? citizensCount : (appState.complaints.map((c) => c.userId).toSet().length > 0 ? appState.complaints.map((c) => c.userId).toSet().length : 124);
+
+    final complaintsToday = appState.complaints.where((c) {
+      return c.createdAt.year == now.year && c.createdAt.month == now.month && c.createdAt.day == now.day;
+    }).length;
+
+    final resolvedToday = appState.complaints.where((c) {
+      if (c.status != ComplaintStatus.resolved) return false;
+      final date = c.resolvedAt ?? c.createdAt;
+      return date.year == now.year && date.month == now.month && date.day == now.day;
+    }).length;
+
+    final totalPending = appState.complaints.where((c) => c.status != ComplaintStatus.resolved).length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildQuickServicesGrid(context, loc, Provider.of<ThemeProvider>(context, listen: false).activeParty),
-        const SizedBox(height: 28),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Constituency Overview',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-                letterSpacing: 0.5,
-              ),
+        const SizedBox(height: 20),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            loc.constituencyOverview,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+              letterSpacing: 0.5,
             ),
-            const Text(
-              'Updated just now',
-              style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w600),
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildStatItem('Citizens', served.toString(), const Color(0xFF22C55E)),
-            _buildStatItem('Complaints Today', '128', const Color(0xFF3B82F6)),
-            _buildStatItem('Resolved Today', '96', const Color(0xFF22C55E)),
-            _buildStatItem('Pending', pending.toString(), const Color(0xFFF97316)),
+            _buildStatItem(loc.citizens, citizensDisplay.toString(), const Color(0xFF10B981), Icons.people_outline),
+            _buildStatItem(loc.complaints, complaintsToday.toString(), const Color(0xFF3B82F6), Icons.campaign_outlined),
+            _buildStatItem(loc.resolved, resolvedToday.toString(), const Color(0xFF22C55E), Icons.check_circle_outline),
+            _buildStatItem(loc.pending, totalPending.toString(), const Color(0xFFF97316), Icons.hourglass_empty_outlined),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStatItem(String title, String count, Color color) {
+  Widget _buildStatItem(String title, String count, Color color, IconData icon) {
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black54),
-            maxLines: 2,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            count,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
-          ),
-        ],
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.15), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 16),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              count,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black54),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -518,7 +555,7 @@ class CitizenHome extends StatelessWidget {
 
     final services = [
       {'icon': Icons.assignment, 'label': loc.fileComplaint, 'color': const Color(0xFFF97316), 'bg': const Color(0xFFFFF7ED), 'onTap': onFileComplaintPressed},
-      {'icon': Icons.mic, 'label': loc.voiceComplaint, 'color': const Color(0xFF3B82F6), 'bg': const Color(0xFFEFF6FF), 'onTap': () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon'))); }},
+      {'icon': Icons.mic, 'label': loc.voiceComplaint, 'color': const Color(0xFF3B82F6), 'bg': const Color(0xFFEFF6FF), 'onTap': () { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.comingSoon))); }},
       {'icon': Icons.account_balance, 'label': loc.myWard, 'color': const Color(0xFF8B5CF6), 'bg': const Color(0xFFF5F3FF), 'onTap': () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWardScreen()));
       }},
@@ -538,29 +575,24 @@ class CitizenHome extends StatelessWidget {
       {'icon': Icons.groups, 'label': loc.meetingsEvents, 'color': const Color(0xFF10B981), 'bg': const Color(0xFFECFDF5), 'onTap': () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const MeetingsListScreen()));
       }},
+      {'icon': Icons.video_library, 'label': loc.mlaUpdatesAndReels, 'color': const Color(0xFFEF4444), 'bg': const Color(0xFFFEF2F2), 'onTap': () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const MLAUpdatesFeed()));
+      }},
     ];
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              loc.quickServices,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-                letterSpacing: 0.5,
-              ),
-            ),
-            Text(
-              loc.viewAll,
-              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-          ],
+        Text(
+          loc.quickServices,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+            letterSpacing: 0.5,
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         GridView.builder(
           padding: EdgeInsets.zero,
           shrinkWrap: true,
@@ -569,7 +601,7 @@ class CitizenHome extends StatelessWidget {
             crossAxisCount: 4,
             crossAxisSpacing: 8,
             mainAxisSpacing: 16,
-            childAspectRatio: 0.75,
+            childAspectRatio: 0.72,
           ),
           itemCount: services.length,
           itemBuilder: (context, index) {
@@ -597,7 +629,7 @@ class CitizenHome extends StatelessWidget {
                     child: Text(
                       service['label'] as String,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87, height: 1.2),
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.black87, height: 1.15),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -611,16 +643,66 @@ class CitizenHome extends StatelessWidget {
     );
   }
 
-  Widget _buildComplaintStatusSummary(int submitted, int pending, int inProgress, int resolved, AppLocalizations loc) {
+  Widget _buildComplaintStatusSummary(int submitted, int pending, int inProgress, int resolved, AppLocalizations loc, AppState appState, BuildContext context) {
+    final citizenComplaints = appState.complaints.where((c) => c.userId == appState.currentUser?.id).toList();
+
     return Row(
       children: [
-        Expanded(child: _buildStatusSummaryCard(loc.submitted, submitted, const Color(0xFF22C55E))),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              appState.setCitizenActiveFilter('pending');
+              final matching = citizenComplaints.where((c) => c.status == ComplaintStatus.submitted).toList();
+              if (matching.isNotEmpty) {
+                appState.setHighlightedComplaintId(matching.last.id);
+              }
+              onTrackComplaintsPressed();
+            },
+            child: _buildStatusSummaryCard(loc.submitted, submitted, const Color(0xFF22C55E)),
+          ),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: _buildStatusSummaryCard(loc.pending, pending, const Color(0xFFF59E0B))),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              appState.setCitizenActiveFilter('all');
+              final matching = citizenComplaints.where((c) => c.status == ComplaintStatus.submitted || c.status == ComplaintStatus.inProgress).toList();
+              if (matching.isNotEmpty) {
+                appState.setHighlightedComplaintId(matching.last.id);
+              }
+              onTrackComplaintsPressed();
+            },
+            child: _buildStatusSummaryCard(loc.pending, pending, const Color(0xFFF59E0B)),
+          ),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: _buildStatusSummaryCard(loc.inProgress, inProgress, const Color(0xFF3B82F6))),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              appState.setCitizenActiveFilter('active');
+              final matching = citizenComplaints.where((c) => c.status == ComplaintStatus.inProgress).toList();
+              if (matching.isNotEmpty) {
+                appState.setHighlightedComplaintId(matching.last.id);
+              }
+              onTrackComplaintsPressed();
+            },
+            child: _buildStatusSummaryCard(loc.inProgress, inProgress, const Color(0xFF3B82F6)),
+          ),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: _buildStatusSummaryCard(loc.resolved, resolved, const Color(0xFF22C55E))),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              appState.setCitizenActiveFilter('done');
+              final matching = citizenComplaints.where((c) => c.status == ComplaintStatus.resolved).toList();
+              if (matching.isNotEmpty) {
+                appState.setHighlightedComplaintId(matching.last.id);
+              }
+              onTrackComplaintsPressed();
+            },
+            child: _buildStatusSummaryCard(loc.resolved, resolved, const Color(0xFF22C55E)),
+          ),
+        ),
       ],
     );
   }
@@ -655,7 +737,7 @@ class CitizenHome extends StatelessWidget {
     );
   }
 
-  Widget _buildComplaintList(List<Complaint> complaints, PartyThemeConfig party, AppLocalizations loc) {
+  Widget _buildComplaintList(List<Complaint> complaints, PartyThemeConfig party, AppLocalizations loc, AppState appState, BuildContext context) {
     if (complaints.isEmpty) {
       return Container(
         width: double.infinity,
@@ -696,7 +778,7 @@ class CitizenHome extends StatelessWidget {
               child: Icon(Icons.description, color: comp.statusColor, size: 24),
             ),
             title: Text(
-              comp.category,
+              comp.getLocalizedCategory(context),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
             ),
             subtitle: Text(
@@ -712,7 +794,7 @@ class CitizenHome extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                comp.statusText,
+                comp.getLocalizedStatus(context),
                 style: TextStyle(
                   color: comp.statusColor,
                   fontSize: 11,
@@ -720,7 +802,11 @@ class CitizenHome extends StatelessWidget {
                 ),
               ),
             ),
-            onTap: onTrackComplaintsPressed,
+            onTap: () {
+              appState.setHighlightedComplaintId(comp.id);
+              appState.setCitizenActiveFilter('all');
+              onTrackComplaintsPressed();
+            },
           ),
         );
       }).toList(),

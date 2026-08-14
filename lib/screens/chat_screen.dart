@@ -86,17 +86,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUser = appState.currentUser;
 
     if (currentUser?.role == UserRole.citizen) {
-      final hoursSinceCreated = DateTime.now().difference(complaint.createdAt).inHours;
-      final isResolved = complaint.status == ComplaintStatus.resolved;
-      final isEscalated = !isResolved && hoursSinceCreated >= 24;
-
-      if (isEscalated) {
-        return 'Chat with Ward Officer';
-      } else {
-        return 'Chat with Category Officer';
-      }
+      if (complaint.pushedTo == 'superAdmin') return 'Chat with MLA / Super Admin';
+      if (complaint.pushedTo == 'mandalOfficer') return 'Chat with Mandal Officer';
+      if (complaint.pushedTo == 'wardAdmin') return 'Chat with Ward Officer';
+      return 'Chat with Category Officer';
     } else {
-      return 'Chat with Citizen';
+      return 'Chat with Citizen (${complaint.citizenName})';
     }
   }
 
@@ -124,7 +119,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _optimisticMessages.add(message);
     });
     
-    // Scroll down immediately for optimistic message
     Future.delayed(const Duration(milliseconds: 50), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -137,10 +131,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       await SupabaseService.sendMessage(message);
-      // Remove optimistic since the stream will bring it back
-      setState(() {
-        _optimisticMessages.remove(message);
-      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -156,16 +146,6 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isReadOnly(AppState appState) {
     final currentUser = appState.currentUser;
     if (currentUser == null) return true;
-
-    if (currentUser.role == UserRole.wardAdmin) {
-      final hoursSinceCreated = DateTime.now().difference(widget.complaint.createdAt).inHours;
-      final isResolved = widget.complaint.status == ComplaintStatus.resolved;
-      if (!isResolved && hoursSinceCreated < 24) {
-        return true;
-      }
-    }
-    
-    // If complaint is resolved, maybe disable chat? (Optional, let's keep it open for now or block it if needed. Prompt doesn't specify blocking after resolution, but implies it's open. We'll leave it open).
     return false;
   }
 
@@ -218,6 +198,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (messages.isEmpty) {
                   return const Center(child: Text('No messages yet. Start the conversation!'));
                 }
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_scrollController.hasClients) {
+                    _scrollController.animateTo(
+                      _scrollController.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOut,
+                    );
+                  }
+                });
 
                 return ListView.builder(
                   controller: _scrollController,

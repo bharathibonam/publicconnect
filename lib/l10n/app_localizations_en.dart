@@ -839,4 +839,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get villages => 'Villages';
+
+  @override
+  String get rejected => 'Rejected';
+
+  @override
+  String get onHold => 'On Hold';
+
+  @override
+  String hoursLeft(Object count) {
+    return '${count}h left';
+  }
+
+  @override
+  String get evidencePhoto => 'Evidence Photo';
+
+  @override
+  String get resolutionEvidence => 'Resolution Evidence';
+
+  @override
+  String get evidenceVideos => 'Evidence Videos';
+
+  @override
+  String get primaryInformation => 'Primary Information';
+
+  @override
+  String get locationDetails => 'Location Details';
+
+  @override
+  String get createdDate => 'Created Date';
+
+  @override
+  String get lastUpdatedDate => 'Last Updated Date';
+
+  @override
+  String get complaintId => 'Complaint ID';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get citizenName => 'Citizen Name';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get panchayat => 'Panchayat';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get uploadedMedia => 'Uploaded Media (Photos & Videos)';
+
+  @override
+  String get updatedJustNow => 'Updated just now';
+
+  @override
+  String get complaintsToday => 'Complaints Today';
+
+  @override
+  String get resolvedToday => 'Resolved Today';
+
+  @override
+  String get mlaUpdatesAndReels => 'MLA Updates & Reels';
+
+  @override
+  String get comingSoon => 'Coming Soon';
 }

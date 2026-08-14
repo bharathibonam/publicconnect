@@ -79,37 +79,42 @@ USING (EXISTS (
 -- 5. Realtime setup
 ALTER PUBLICATION supabase_realtime ADD TABLE public.completed_works;
 
--- 6. Trigger for Automatic Notification
 CREATE OR REPLACE FUNCTION public.auto_notify_completed_work()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.notifications (
-        user_id,
+        id,
+        "userId",
         title,
-        message,
+        body,
+        "complaintId",
         type,
+        notification_type,
         reference_id,
-        is_read,
-        created_at
+        "isRead",
+        "createdAt"
     ) VALUES (
+        'notif_' || gen_random_uuid()::text,
         NEW.citizen_id,
-        'Work Completed: ' || NEW.title,
-        'Your complaint work has been completed.',
+        'Work Completed: ' || COALESCE((SELECT category FROM public.complaints WHERE id = NEW.complaint_id), NEW.title),
+        'Your complaint work has been completed successfully. Please review the completed work.',
+        NEW.complaint_id,
+        'completed_work',
         'completed_work',
         NEW.id,
         FALSE,
         NOW()
     );
 
-    -- Update the related complaint status to 'resolved' and update its timestamp
     UPDATE public.complaints 
     SET status = 'resolved', 
-        resolved_at = NOW() 
+        "resolvedAt" = NOW(),
+        "resolvedImageUrl" = NEW.after_image_url
     WHERE id = NEW.complaint_id;
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_notify_completed_work ON public.completed_works;
 CREATE TRIGGER trg_notify_completed_work

@@ -12,6 +12,8 @@ import 'super_constituency_overview.dart';
 import 'meetings/meetings_list_screen.dart';
 import 'system_configuration_screen.dart';
 import '../announcements/broadcast_history_screen.dart';
+import 'mla_media_publisher.dart';
+import 'mla_media_history.dart';
 
 class SuperAdminNavHolder extends StatefulWidget {
   const SuperAdminNavHolder({super.key});
@@ -28,6 +30,18 @@ class _SuperAdminNavHolderState extends State<SuperAdminNavHolder> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final themeConfig = themeProvider.activeParty;
     final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context);
+
+    if (appState.requestedSuperAdminTabIndex != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentIndex = appState.requestedSuperAdminTabIndex!;
+          });
+          appState.clearSuperAdminTabIndex();
+        }
+      });
+    }
 
     final List<Widget> screens = [
       const SuperDashboardHome(),
@@ -37,13 +51,23 @@ class _SuperAdminNavHolderState extends State<SuperAdminNavHolder> {
       const SuperProfileTab(),
     ];
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      drawer: _buildDrawer(context, themeConfig, l10n),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        drawer: _buildDrawer(context, themeConfig, l10n),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: screens,
+        ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -97,6 +121,7 @@ class _SuperAdminNavHolderState extends State<SuperAdminNavHolder> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -165,12 +190,17 @@ class _SuperAdminNavHolderState extends State<SuperAdminNavHolder> {
                   Navigator.pop(context);
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const BroadcastHistoryScreen()));
                 }, themeConfig),
-                _drawerItem(Icons.contact_phone_outlined, l10n.officerDirectory, () {
-                  Navigator.pop(context);
-                }, themeConfig),
                 _drawerItem(Icons.map_outlined, 'Constituency Overview', () {
                   Navigator.pop(context);
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const SuperConstituencyOverview()));
+                }, themeConfig),
+                _drawerItem(Icons.video_call_outlined, 'MLA Media Publisher', () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MLAMediaPublisher()));
+                }, themeConfig),
+                _drawerItem(Icons.history_toggle_off, 'MLA Media History', () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => MLAMediaHistoryScreen()));
                 }, themeConfig),
                 _drawerItem(Icons.smart_toy_outlined, 'AI Assistant', () {
                   Navigator.pop(context);

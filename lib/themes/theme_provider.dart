@@ -7,8 +7,8 @@ class ThemeProvider extends ChangeNotifier {
   static const String _boxName = 'theme_settings';
   static const String _activePartyKey = 'active_party_id';
 
-  PartyThemeConfig _baseParty = PartyThemeConfig.tdp;
-  ThemeData _themeData = _buildThemeData(PartyThemeConfig.tdp);
+  PartyThemeConfig _baseParty = PartyThemeConfig.bjp;
+  ThemeData _themeData = _buildThemeData(PartyThemeConfig.bjp);
   User? _currentUser;
 
   PartyThemeConfig get activeParty {
@@ -43,7 +43,7 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> _loadTheme() async {
     final box = await Hive.openBox(_boxName);
-    final savedPartyId = box.get(_activePartyKey, defaultValue: 'tdp');
+    final savedPartyId = box.get(_activePartyKey, defaultValue: 'bjp');
     
     _baseParty = PartyThemeConfig.availableThemes[savedPartyId] ?? PartyThemeConfig.tdp;
     _refreshThemeData();

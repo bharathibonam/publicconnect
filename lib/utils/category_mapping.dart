@@ -101,6 +101,21 @@ class CategoryMapping {
     }
   }
 
+  static String getCanonicalCategory(String input) {
+    if (input.isEmpty) return '';
+    final lower = input.toLowerCase();
+    if (lower.contains('water')) return 'Water Supply';
+    if (lower.contains('electric') || lower.contains('power') || lower.contains('line')) return 'Electricity';
+    if (lower.contains('road') || lower.contains('pothole') || lower.contains('infrastructure')) return 'Roads & Infrastructure';
+    if (lower.contains('sanitat') || lower.contains('garbage') || lower.contains('waste')) return 'Sanitation';
+    if (lower.contains('health') || lower.contains('medical') || lower.contains('anm')) return 'Health';
+    if (lower.contains('agri') || lower.contains('crop') || lower.contains('vaa')) return 'Agriculture';
+    if (lower.contains('revenu') || lower.contains('land') || lower.contains('certific')) return 'Revenue & Certificates';
+    if (lower.contains('child') || lower.contains('women') || lower.contains('welfare')) return 'Women & Child Welfare';
+    if (lower.contains('edu') || lower.contains('school')) return 'Education';
+    return input.trim();
+  }
+
   static List<String> getAllCategories() {
     return [
       'Water Supply',

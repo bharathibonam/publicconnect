@@ -3,11 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../services/app_state.dart';
 import '../../models/app_notification.dart';
+import '../../models/user.dart';
+import '../../models/complaint.dart';
+import '../../services/supabase_service.dart';
+import '../../widgets/shared_officer_widgets.dart';
 import '../announcements/announcement_details_screen.dart';
 import '../ward_admin/completed_work_details_screen.dart';
 import 'my_ward_screen.dart';
 import '../super_admin/meetings/meeting_details_screen.dart';
 import '../../../themes/theme_provider.dart';
+import 'track_complaints.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -165,12 +170,103 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _fetchAndShowComplaint(BuildContext context, String complaintId, AppState appState, bool isTelugu) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (loadingCtx) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 20),
+            Text(isTelugu ? 'ఫిర్యాదును లోడ్ చేస్తోంది...' : 'Loading complaint...'),
+          ],
+        ),
+      ),
+    );
+
+    bool success = false;
+    while (!success) {
+      try {
+        var comp = appState.complaints.firstWhere(
+          (c) => c.id == complaintId,
+          orElse: () => throw Exception('Not found locally'),
+        );
+        
+        if (context.mounted) {
+          Navigator.pop(context); // Pop loading dialog
+          ComplaintDetailsModal.show(context, comp, isTelugu);
+        }
+        success = true;
+      } catch (e) {
+        try {
+          final compMap = await SupabaseService.getComplaintById(complaintId);
+          if (compMap != null) {
+            final comp = Complaint.fromMap(compMap);
+            if (context.mounted) {
+              Navigator.pop(context); // Pop loading dialog
+              ComplaintDetailsModal.show(context, comp, isTelugu);
+            }
+            success = true;
+          } else {
+            throw Exception('Complaint not found in database');
+          }
+        } catch (dbError) {
+          if (context.mounted) {
+            Navigator.pop(context); // Pop loading dialog
+          }
+          
+          bool retry = false;
+          if (context.mounted) {
+            retry = await showDialog<bool>(
+              context: context,
+              barrierDismissible: false,
+              builder: (errorCtx) => AlertDialog(
+                title: Text(isTelugu ? 'లోపం' : 'Error'),
+                content: Text(isTelugu ? 'ఫిర్యాదును లోడ్ చేయడం సాధ్యం కాలేదు.' : 'Unable to load complaint.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(errorCtx, false),
+                    child: Text(isTelugu ? 'రద్దు చేయి' : 'Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(errorCtx, true),
+                    child: Text(isTelugu ? 'మళ్ళీ ప్రయత్నించు' : 'Retry'),
+                  ),
+                ],
+              ),
+            ) ?? false;
+          }
+          
+          if (!retry) {
+            break;
+          }
+          
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (loadingCtx) => AlertDialog(
+                content: Row(
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(width: 20),
+                    Text(isTelugu ? 'ఫిర్యాదును లోడ్ చేస్తోంది...' : 'Loading complaint...'),
+                  ],
+                ),
+              ),
+            );
+          }
+        }
+      }
+    }
+  }
+
   Future<void> _onTap(BuildContext context, AppNotification notif, AppState appState) async {
-    // Mark as read optimistically
     appState.markNotificationAsRead(notif.id);
+    final isTelugu = appState.isTelugu;
 
     if (notif.isAnnouncementNotification) {
-      // Open announcement details directly
       final announcementId = notif.announcementId ?? notif.complaintId;
       if (announcementId != null && announcementId.isNotEmpty) {
         Navigator.push(
@@ -194,9 +290,22 @@ class NotificationsScreen extends StatelessWidget {
         builder: (_) => MyWardScreen(initialUpdateId: notif.complaintId),
       ));
     } else if (notif.effectiveType == 'complaint_status' || notif.effectiveType == 'complaint_resolved') {
-      Navigator.pop(context);
-      appState.setHighlightedComplaintId(notif.complaintId);
-      appState.setCitizenTabIndex(3);
+      if (notif.complaintId != null && notif.complaintId!.isNotEmpty) {
+        appState.setHighlightedComplaintId(notif.complaintId);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TrackComplaintsScreen()),
+        );
+      } else {
+        Navigator.pop(context);
+      }
+    } else if (notif.effectiveType == 'complaint') {
+      final complaintId = notif.referenceId ?? notif.complaintId;
+      if (complaintId != null && complaintId.isNotEmpty) {
+        _fetchAndShowComplaint(context, complaintId, appState, isTelugu);
+      } else {
+        Navigator.pop(context);
+      }
     } else if (notif.effectiveType == 'meeting') {
       final meetingId = notif.referenceId ?? notif.complaintId;
       if (meetingId != null) {

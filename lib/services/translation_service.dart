@@ -196,8 +196,10 @@ class Trans {
     }
   };
 
-  static String t(String key, bool isTelugu) {
-    final lang = isTelugu ? 'te' : 'en';
+  static bool isTelugu = false;
+
+  static String t(String key, [bool? isTeluguParam]) {
+    final lang = (isTeluguParam ?? isTelugu) ? 'te' : 'en';
     return _localizedValues[lang]?[key] ?? key;
   }
 }

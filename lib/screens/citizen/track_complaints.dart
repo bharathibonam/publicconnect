@@ -13,7 +13,8 @@ import '../../utils/category_mapping.dart';
 import '../../utils/mandal_mapping.dart';
 
 class TrackComplaintsScreen extends StatefulWidget {
-  const TrackComplaintsScreen({super.key});
+  final VoidCallback? onBackPressed;
+  const TrackComplaintsScreen({super.key, this.onBackPressed});
 
   @override
   State<TrackComplaintsScreen> createState() => _TrackComplaintsScreenState();
@@ -33,6 +34,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    _statusFilterKey = appState.citizenActiveFilter;
     final isTelugu = appState.isTelugu;
     final user = appState.currentUser;
 
@@ -88,12 +90,16 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (Navigator.canPop(context)) ...[
+                if (Navigator.canPop(context) || widget.onBackPressed != null) ...[
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
                     onPressed: () {
                       appState.setHighlightedComplaintId(null);
-                      Navigator.pop(context);
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else if (widget.onBackPressed != null) {
+                        widget.onBackPressed!();
+                      }
                     },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -235,9 +241,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                     ),
                     onSelected: (val) {
                       if (val) {
-                        setState(() {
-                          _statusFilterKey = filterKey;
-                        });
+                        appState.setCitizenActiveFilter(filterKey);
                       }
                     },
                   ),
@@ -744,62 +748,87 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
   }
 
   Widget _buildEvidenceImagesSection(BuildContext context, Complaint comp, bool isTelugu) {
-    final hasBefore = comp.imageUrl != null;
+    final hasImages = comp.imageUrls.isNotEmpty;
+    final hasVideos = comp.videoUrls.isNotEmpty;
     final hasAfter = comp.resolvedImageUrl != null;
 
-    if (!hasBefore && !hasAfter) return const SizedBox();
+    if (!hasImages && !hasVideos && !hasAfter) return const SizedBox();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        Row(
-          children: [
-            if (hasBefore)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      Trans.t('before_photo', isTelugu),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        height: 130,
-                        width: double.infinity,
-                        child: _buildImageWidget(context, comp.imageUrl!, isVideo: comp.isVideoEvidence),
+        if (hasImages || hasAfter) ...[
+          Text(
+            Trans.t('before_photo', isTelugu),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
+          const SizedBox(height: 6),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1,
+            ),
+            itemCount: comp.imageUrls.length + (hasAfter ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index < comp.imageUrls.length) {
+                final url = comp.imageUrls[index];
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _buildImageWidget(context, url, isVideo: false),
+                );
+              } else {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      Positioned.fill(
+                        child: _buildImageWidget(context, comp.resolvedImageUrl!, isVideo: false),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            if (hasBefore && hasAfter) const SizedBox(width: 12),
-            if (hasAfter)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      Trans.t('after_photo', isTelugu),
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        height: 130,
+                      Container(
+                        color: Colors.black54,
                         width: double.infinity,
-                        child: _buildImageWidget(context, comp.resolvedImageUrl!, isVideo: comp.isResolvedVideoEvidence),
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Text(
+                          Trans.t('after_photo', isTelugu),
+                          style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+        if (hasVideos) ...[
+          const SizedBox(height: 12),
+          Text(
+            isTelugu ? 'వీడియో సాక్ష్యం' : 'Evidence Videos',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: comp.videoUrls.map((vidUrl) {
+              return SizedBox(
+                width: 140,
+                height: 100,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _buildImageWidget(context, vidUrl, isVideo: true),
                 ),
-              ),
-          ],
-        ),
+              );
+            }).toList(),
+          ),
+        ],
       ],
     );
   }
@@ -1119,58 +1148,75 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
   }
 
   Widget _buildTimelineStepper(Complaint comp, bool isTelugu) {
-    int currentStepIndex = 1;
-    switch (comp.status) {
-      case ComplaintStatus.submitted:
-        currentStepIndex = 1;
-        break;
-      case ComplaintStatus.inProgress:
-        currentStepIndex = 3;
-        break;
-      case ComplaintStatus.resolved:
-        currentStepIndex = 5; // All completed
-        break;
-    }
+    final List<Map<String, dynamic>> steps = [
+      {
+        'title': isTelugu ? 'ఫిర్యాదు సమర్పించబడింది' : 'Complaint Submitted',
+        'desc': isTelugu ? 'ఫిర్యాదు విజయవంతంగా నమోదు చేయబడింది.' : 'Your complaint has been successfully registered.',
+        'time': _formatDate(comp.createdAt),
+        'isCompleted': true,
+        'isActive': false,
+      },
+      {
+        'title': isTelugu ? 'కేటగిరీ అధికారికి కేటాయించబడింది' : 'Assigned to Category Officer',
+        'desc': isTelugu ? 'కేటగిరీ అధికారి సమస్యను సమీక్షిస్తున్నారు.' : 'Assigned to Category Officer for review.',
+        'time': _formatDate(comp.createdAt.add(const Duration(minutes: 10))),
+        'isCompleted': comp.isPushed || comp.status == ComplaintStatus.resolved,
+        'isActive': !comp.isPushed && comp.status != ComplaintStatus.resolved && comp.status != ComplaintStatus.rejected,
+      },
+      {
+        'title': isTelugu ? 'వార్డు సభ్యునికి ఎస్కలేట్ చేయబడింది' : 'Escalated to Ward Member',
+        'desc': isTelugu ? 'పరిష్కార గడువు ముగిసినందున వార్డు సభ్యునికి బదిలీ చేయబడింది.' : 'Escalated to Ward Member / Officer for resolution.',
+        'time': comp.isPushed && (comp.pushedTo == 'wardAdmin' || comp.pushedTo == 'mandalOfficer' || comp.pushedTo == 'superAdmin')
+            ? _formatDate(comp.createdAt.add(const Duration(hours: 12)))
+            : '',
+        'isCompleted': comp.isPushed && (comp.pushedTo == 'mandalOfficer' || comp.pushedTo == 'superAdmin' || comp.status == ComplaintStatus.resolved),
+        'isActive': comp.isPushed && comp.pushedTo == 'wardAdmin' && comp.status != ComplaintStatus.resolved,
+      },
+      {
+        'title': isTelugu ? 'మండల అధికారికి ఎస్కలేట్ చేయబడింది' : 'Escalated to Mandal Officer',
+        'desc': isTelugu ? 'మండల అధికారి సమీక్షకు బదిలీ చేయబడింది.' : 'Escalated to Mandal Officer for resolution.',
+        'time': comp.isPushed && (comp.pushedTo == 'mandalOfficer' || comp.pushedTo == 'superAdmin')
+            ? _formatDate(comp.createdAt.add(const Duration(hours: 24)))
+            : '',
+        'isCompleted': comp.isPushed && (comp.pushedTo == 'superAdmin' || comp.status == ComplaintStatus.resolved),
+        'isActive': comp.isPushed && comp.pushedTo == 'mandalOfficer' && comp.status != ComplaintStatus.resolved,
+      },
+      {
+        'title': isTelugu ? 'శాసనసభ్యునికి (MLA) ఎస్కలేట్ చేయబడింది' : 'Escalated to MLA',
+        'desc': isTelugu ? 'ఉన్నత ప్రాధాన్యత క్రింద శాసనసభ్యునికి బదిలీ చేయబడింది.' : 'Escalated to MLA / Super Admin for emergency resolution.',
+        'time': comp.isPushed && comp.pushedTo == 'superAdmin'
+            ? _formatDate(comp.createdAt.add(const Duration(hours: 36)))
+            : '',
+        'isCompleted': comp.isPushed && comp.pushedTo == 'superAdmin' && comp.status == ComplaintStatus.resolved,
+        'isActive': comp.isPushed && comp.pushedTo == 'superAdmin' && comp.status != ComplaintStatus.resolved,
+      },
+      {
+        'title': isTelugu ? 'పరిష్కరించబడింది' : 'Resolved',
+        'desc': isTelugu ? 'సమస్య విజయవంతంగా పరిష్కరించబడింది.' : 'Complaint resolved. Action evidence uploaded.',
+        'time': comp.status == ComplaintStatus.resolved && comp.resolvedAt != null
+            ? _formatDate(comp.resolvedAt!)
+            : '',
+        'isCompleted': comp.status == ComplaintStatus.resolved,
+        'isActive': comp.status == ComplaintStatus.resolved,
+      },
+    ];
 
     return Column(
-      children: [
-        _timelineStep(
-          title: isTelugu ? 'ఫిర్యాదు సమర్పించబడింది' : 'Complaint Submitted',
-          description: isTelugu ? 'ఫిర్యాదు మున్సిపల్ డేటాబేస్లో నమోదు చేయబడింది.' : 'Your complaint has been successfully registered.',
-          time: _formatDate(comp.createdAt),
-          isCompleted: currentStepIndex > 1,
-          isActive: currentStepIndex == 1,
-          isLast: false,
-        ),
-        _timelineStep(
-          title: isTelugu ? 'అధికారికి కేటాయించబడింది' : 'Assigned to Officer',
-          description: isTelugu ? 'అధికారి సమస్యను సమీక్షిస్తున్నారు.' : 'Officer is reviewing your complaint.',
-          time: currentStepIndex > 1 ? _formatDate(comp.createdAt.add(const Duration(minutes: 30))) : '', 
-          isCompleted: currentStepIndex > 2,
-          isActive: currentStepIndex == 2,
-          isLast: false,
-        ),
-        _timelineStep(
-          title: isTelugu ? 'పురోగతిలో ఉంది' : 'In Progress',
-          description: isTelugu ? 'క్షేత్రస్థాయిలో సమస్య పరిష్కార పనులు జరుగుతున్నాయి.' : 'Field correction works currently underway.',
-          time: currentStepIndex > 3 ? (comp.resolvedAt != null ? _formatDate(comp.resolvedAt!) : '') : '',
-          isCompleted: currentStepIndex > 3,
-          isActive: currentStepIndex == 3,
-          isLast: false,
-        ),
-        _timelineStep(
-          title: isTelugu ? 'పరిష్కరించబడింది' : 'Resolved',
-          description: isTelugu ? 'సమస్య పరిష్కరించబడింది, పరిష్కార ఫోటో అప్‌లోడ్ చేయబడింది.' : 'Issue resolved. Ward admin uploaded resolution photo.',
-          time: currentStepIndex > 4 
-              ? (comp.resolvedAt != null ? _formatDate(comp.resolvedAt!) : (isTelugu ? 'పరిష్కరించబడింది' : 'Resolved')) 
-              : '',
-          isCompleted: currentStepIndex > 4, 
-          isActive: currentStepIndex == 4, 
-          isLast: true,
-        ),
-      ],
+      children: List.generate(steps.length, (index) {
+        final step = steps[index];
+        return _timelineStep(
+          title: step['title'],
+          description: step['desc'],
+          time: step['time'],
+          isCompleted: step['isCompleted'],
+          isActive: step['isActive'],
+          isLast: index == steps.length - 1,
+        );
+      }),
     );
   }
+
+
 
   Widget _timelineStep({
     required String title,

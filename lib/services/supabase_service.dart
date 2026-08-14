@@ -113,6 +113,17 @@ class SupabaseService {
 
   // ───────────────── USERS ─────────────────
 
+  static Future<Map<String, dynamic>?> getUserMapByPhone(String phone) async {
+    try {
+      final res = await _db.from('users').select().eq('phoneNumber', phone.trim()).limit(1);
+      if (res.isNotEmpty) return res.first;
+      return null;
+    } catch (e) {
+      debugPrint('getUserMapByPhone error: $e');
+      return null;
+    }
+  }
+
   // Returns: User on success, null on failure
   // Throws: Exception with specific message for wrong password vs not found
   static Future<User?> loginUser(
@@ -171,20 +182,31 @@ class SupabaseService {
     bool isEmployed,
     String education,
   ) async {
+    final cleanPhone = phone.trim();
+    final cleanPassword = password.trim();
+    final cleanName = name.trim();
+
+    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(cleanPhone)) return null;
+    final hasUpper = RegExp(r'[A-Z]').hasMatch(cleanPassword);
+    final hasLower = RegExp(r'[a-z]').hasMatch(cleanPassword);
+    final hasDigit = RegExp(r'\d').hasMatch(cleanPassword);
+    final hasSpecial = RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(cleanPassword);
+    if (cleanPassword.length < 8 || !hasUpper || !hasLower || !hasDigit || !hasSpecial) return null;
+    if (cleanName.isEmpty) return null;
+
     try {
-      final exists = await phoneExists(phone);
+      final exists = await phoneExists(cleanPhone);
 
       if (exists) return null;
-
 
       // simpler way to generate ID:
       final newId = DateTime.now().millisecondsSinceEpoch.toString();
 
       final newUser = User(
         id: newId,
-        name: name,
-        phoneNumber: phone,
-        password: password,
+        name: cleanName,
+        phoneNumber: cleanPhone,
+        password: cleanPassword,
         role: UserRole.citizen,
         createdAt: DateTime.now(),
         isEmployed: isEmployed,
@@ -424,6 +446,16 @@ class SupabaseService {
     await _db.from('complaints').update(data).eq('id', id);
   }
 
+  static Future<Map<String, dynamic>?> getComplaintById(String id) async {
+    try {
+      final res = await _db.from('complaints').select().eq('id', id).maybeSingle();
+      return res;
+    } catch (e) {
+      debugPrint('getComplaintById error: $e');
+      return null;
+    }
+  }
+
   static Future<void> submitComplaintFeedback(
     String id,
     String rating,
@@ -432,6 +464,19 @@ class SupabaseService {
       'feedbackRating': rating,
       'isClosed': true,
     }).eq('id', id);
+  }
+
+  static Future<void> escalateComplaintInDb(String complaintId, String pushedTo) async {
+    try {
+      await _db.from('complaints').update({
+        'isPushed': true,
+        'pushedTo': pushedTo,
+        'status': 'inProgress',
+        'updatedAt': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', complaintId);
+    } catch (e) {
+      debugPrint('escalateComplaintInDb error: $e');
+    }
   }
 
   static Future<void> updateComplaintPriority(
@@ -564,6 +609,19 @@ class SupabaseService {
     );
   }
 
+  static Future<String?> uploadComplaintBytesCustom(
+    Uint8List bytes,
+    String destinationPath,
+    String contentType,
+  ) async {
+    return _uploadBytesToStorage(
+      bytes,
+      'complaints',
+      destinationPath,
+      contentType,
+    );
+  }
+
   static Future<String?> uploadResolvedComplaintImage(
     File imageFile,
     String complaintId,
@@ -582,6 +640,18 @@ class SupabaseService {
   ) async {
     return _uploadFileToStorage(
       imageFile,
+      'profiles',
+      '$userId/profile.jpg',
+      'image/jpeg',
+    );
+  }
+
+  static Future<String?> uploadProfileImageBytes(
+    Uint8List bytes,
+    String userId,
+  ) async {
+    return _uploadBytesToStorage(
+      bytes,
       'profiles',
       '$userId/profile.jpg',
       'image/jpeg',
@@ -1141,4 +1211,34 @@ class SupabaseService {
     if (targetRole.toLowerCase().replaceAll(' ', '') == 'allusers') return true;
     return normalizeRole(targetRole) == normalizeRole(userRole);
   }
+
+  static Future<void> createNotifications(List<Map<String, dynamic>> notifications) async {
+    try {
+      await _db.from('notifications').insert(notifications);
+    } catch (e) {
+      debugPrint('Error creating notifications: $e');
+    }
+  }
+
+  // ───────────────── ELECTION RESULTS ─────────────────
+
+  /// Fetch election results for polling stations in Rajahmundry.
+  /// Optionally filter by [assemblySegment] (e.g. 'Gopalapuram', 'Kovvur', 'Rajahmundry Rural').
+  static Future<List<Map<String, dynamic>>> getElectionResults({String? assemblySegment}) async {
+    try {
+      var query = _db.from('election_results').select('*');
+      if (assemblySegment != null && assemblySegment.isNotEmpty && assemblySegment != 'ALL') {
+        final cleanSeg = assemblySegment.replaceAll(RegExp(r'^\d+\s*'), '').trim();
+        query = query.or('assembly_segment.ilike.%$cleanSeg%,assembly_segment_code.ilike.%$cleanSeg%');
+      }
+      final response = await query.range(0, 5000).order('polling_station_number', ascending: true);
+      return List<Map<String, dynamic>>.from(response);
+
+
+    } catch (e) {
+      debugPrint('Error fetching election results: $e');
+      return [];
+    }
+  }
 }
+

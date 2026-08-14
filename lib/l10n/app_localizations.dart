@@ -1741,6 +1741,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Villages'**
   String get villages;
+
+  /// No description provided for @rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get rejected;
+
+  /// No description provided for @onHold.
+  ///
+  /// In en, this message translates to:
+  /// **'On Hold'**
+  String get onHold;
+
+  /// No description provided for @hoursLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h left'**
+  String hoursLeft(Object count);
+
+  /// No description provided for @evidencePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence Photo'**
+  String get evidencePhoto;
+
+  /// No description provided for @resolutionEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution Evidence'**
+  String get resolutionEvidence;
+
+  /// No description provided for @evidenceVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence Videos'**
+  String get evidenceVideos;
+
+  /// No description provided for @primaryInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary Information'**
+  String get primaryInformation;
+
+  /// No description provided for @locationDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Details'**
+  String get locationDetails;
+
+  /// No description provided for @createdDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Created Date'**
+  String get createdDate;
+
+  /// No description provided for @lastUpdatedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Updated Date'**
+  String get lastUpdatedDate;
+
+  /// No description provided for @complaintId.
+  ///
+  /// In en, this message translates to:
+  /// **'Complaint ID'**
+  String get complaintId;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @citizenName.
+  ///
+  /// In en, this message translates to:
+  /// **'Citizen Name'**
+  String get citizenName;
+
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// No description provided for @panchayat.
+  ///
+  /// In en, this message translates to:
+  /// **'Panchayat'**
+  String get panchayat;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @uploadedMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded Media (Photos & Videos)'**
+  String get uploadedMedia;
+
+  /// No description provided for @updatedJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated just now'**
+  String get updatedJustNow;
+
+  /// No description provided for @complaintsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Complaints Today'**
+  String get complaintsToday;
+
+  /// No description provided for @resolvedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved Today'**
+  String get resolvedToday;
+
+  /// No description provided for @mlaUpdatesAndReels.
+  ///
+  /// In en, this message translates to:
+  /// **'MLA Updates & Reels'**
+  String get mlaUpdatesAndReels;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming Soon'**
+  String get comingSoon;
 }
 
 class _AppLocalizationsDelegate

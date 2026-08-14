@@ -73,7 +73,7 @@ class SuperComplaintDetailsScreen extends StatelessWidget {
                         children: [
                           const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
                           const SizedBox(width: 4),
-                          Text('16 Jul 2026 - 10:30 AM', style: const TextStyle(fontSize: 12, color: Colors.grey)), // Mock date
+                          Text('${complaint.createdAt.day}/${complaint.createdAt.month}/${complaint.createdAt.year} ${complaint.createdAt.hour}:${complaint.createdAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
                     ],

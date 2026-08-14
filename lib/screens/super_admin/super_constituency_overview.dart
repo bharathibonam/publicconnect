@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_demo_app/l10n/app_localizations.dart';
+import 'package:latlong2/latlong.dart';
 import '../../themes/theme_provider.dart';
+import '../../widgets/custom_map.dart';
+import '../../services/app_state.dart';
 
 class SuperConstituencyOverview extends StatelessWidget {
   const SuperConstituencyOverview({super.key});
@@ -10,6 +13,7 @@ class SuperConstituencyOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeConfig = Provider.of<ThemeProvider>(context).activeParty;
     final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context);
     
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -33,7 +37,14 @@ class SuperConstituencyOverview extends StatelessWidget {
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(16)),
-              child: const Center(child: Icon(Icons.map, size: 40, color: Colors.grey)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: CustomMap(
+                  complaints: appState.complaints,
+                  initialCenter: const LatLng(17.006677, 81.784769),
+                  initialZoom: 12.0,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -101,7 +112,12 @@ class SuperConstituencyOverview extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: (){},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ConstituencyMapScreen()),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: themeConfig.primaryColor,
                 minimumSize: const Size(double.infinity, 50),
@@ -143,6 +159,28 @@ class SuperConstituencyOverview extends StatelessWidget {
         const SizedBox(height: 2),
         Text(val, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+}
+
+class ConstituencyMapScreen extends StatelessWidget {
+  const ConstituencyMapScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detailed Constituency Map', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        leading: const BackButton(color: Colors.black87),
+      ),
+      body: CustomMap(
+        complaints: appState.complaints,
+        initialCenter: const LatLng(17.006677, 81.784769),
+        initialZoom: 12.0,
+      ),
     );
   }
 }

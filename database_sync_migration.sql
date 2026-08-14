@@ -338,11 +338,38 @@ CREATE TRIGGER trg_auto_announcement_notifications AFTER INSERT ON public.announ
 -- Trigger: auto_notify_completed_work
 CREATE OR REPLACE FUNCTION public.auto_notify_completed_work() RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.notifications ("userId", title, body, type, reference_id, "isRead", "createdAt")
-    VALUES (NEW.citizen_id, 'Work Completed: ' || NEW.title, 'Your complaint work has been completed.', 'completed_work', NEW.id, FALSE, NOW());
-    UPDATE public.complaints SET status = 'resolved', resolved_at = NOW() WHERE id = NEW.complaint_id;
+    INSERT INTO public.notifications (
+        id,
+        "userId",
+        title,
+        body,
+        "complaintId",
+        type,
+        notification_type,
+        reference_id,
+        "isRead",
+        "createdAt"
+    ) VALUES (
+        'notif_' || gen_random_uuid()::text,
+        NEW.citizen_id,
+        'Work Completed: ' || COALESCE((SELECT category FROM public.complaints WHERE id = NEW.complaint_id), NEW.title),
+        'Your complaint work has been completed successfully. Please review the completed work.',
+        NEW.complaint_id,
+        'completed_work',
+        'completed_work',
+        NEW.id,
+        FALSE,
+        NOW()
+    );
+
+    UPDATE public.complaints 
+    SET status = 'resolved', 
+        "resolvedAt" = NOW(),
+        "resolvedImageUrl" = NEW.after_image_url
+    WHERE id = NEW.complaint_id;
+
     RETURN NEW;
-END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_notify_completed_work ON public.completed_works;
 CREATE TRIGGER trg_notify_completed_work AFTER INSERT ON public.completed_works FOR EACH ROW EXECUTE FUNCTION public.auto_notify_completed_work();

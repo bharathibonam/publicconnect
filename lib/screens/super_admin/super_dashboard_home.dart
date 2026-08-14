@@ -4,10 +4,12 @@ import 'package:flutter_demo_app/l10n/app_localizations.dart';
 import '../../services/app_state.dart';
 import '../../themes/theme_provider.dart';
 import '../../models/complaint.dart';
+import '../../utils/category_mapping.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/shared_officer_widgets.dart';
 import '../citizen/track_complaints.dart';
 import '../citizen/new_complaint.dart';
+import '../citizen/my_ward_screen.dart';
 import '../announcements/create_announcement_screen.dart';
 import '../announcements/broadcast_history_screen.dart';
 import 'meetings/meetings_list_screen.dart';
@@ -238,13 +240,13 @@ class SuperDashboardHome extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            _buildOverviewCards(l10n, total, resolved, pending, inReview),
+            _buildOverviewCards(context, l10n, total, resolved, pending, inReview),
             const SizedBox(height: 24),
-            _buildPrimaryServices(l10n, themeConfig),
+            _buildPrimaryServices(l10n, themeConfig, complaints, context),
             const SizedBox(height: 24),
             _buildRecentComplaints(context, appState, l10n, complaints, isTelugu),
             const SizedBox(height: 24),
-            _buildTopMandals(l10n),
+            _buildTopMandals(l10n, complaints, context),
             const SizedBox(height: 24),
             _buildQuickActions(context, l10n, themeConfig),
             const SizedBox(height: 24),
@@ -260,15 +262,20 @@ class SuperDashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildOverviewCards(AppLocalizations l10n, int total, int resolved, int pending, int inReview) {
+  Widget _buildOverviewCards(BuildContext context, AppLocalizations l10n, int total, int resolved, int pending, int inReview) {
+    final appState = Provider.of<AppState>(context, listen: false);
     return Row(
       children: [
         Expanded(
           child: Column(
             children: [
-              _statCard(l10n.complaints, total.toString(), '+12%', Colors.blue),
+              _statCard(l10n.complaints, total.toString(), '+12%', Colors.blue, () {
+                appState.setSuperAdminTabIndex(1, filter: 'all');
+              }),
               const SizedBox(height: 12),
-              _statCard(l10n.pending, pending.toString(), '+3%', Colors.orange),
+              _statCard(l10n.pending, pending.toString(), '+3%', Colors.orange, () {
+                appState.setSuperAdminTabIndex(1, filter: 'pending');
+              }),
             ],
           ),
         ),
@@ -276,9 +283,13 @@ class SuperDashboardHome extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              _statCard(l10n.resolved, resolved.toString(), '+16%', Colors.green),
+              _statCard(l10n.resolved, resolved.toString(), '+16%', Colors.green, () {
+                appState.setSuperAdminTabIndex(1, filter: 'resolved');
+              }),
               const SizedBox(height: 12),
-              _statCard(l10n.inReview, inReview.toString(), '+2%', Colors.red),
+              _statCard(l10n.inReview, inReview.toString(), '+2%', Colors.red, () {
+                appState.setSuperAdminTabIndex(1, filter: 'inProgress');
+              }),
             ],
           ),
         ),
@@ -286,40 +297,48 @@ class SuperDashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _statCard(String label, String value, String trend, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)]),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(Icons.analytics, color: color, size: 20),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(4)),
-                child: Row(
-                  children: [
-                    const Icon(Icons.arrow_upward, color: Colors.green, size: 10),
-                    Text(trend, style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ],
+  Widget _statCard(String label, String value, String trend, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(Icons.analytics, color: color, size: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(4)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.arrow_upward, color: Colors.green, size: 10),
+                      Text(trend, style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          const SizedBox(height: 4),
-          const Text('vs last month', style: TextStyle(fontSize: 10, color: Colors.grey)),
-        ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 4),
+            const Text('vs last month', style: TextStyle(fontSize: 10, color: Colors.grey)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPrimaryServices(AppLocalizations l10n, dynamic themeConfig) {
+  Widget _buildPrimaryServices(AppLocalizations l10n, dynamic themeConfig, List<Complaint> complaints, BuildContext context) {
+    final waterCount = complaints.where((c) => CategoryMapping.getCanonicalCategory(c.category) == 'Water Supply').length;
+    final electricityCount = complaints.where((c) => CategoryMapping.getCanonicalCategory(c.category) == 'Electricity').length;
+    final roadsCount = complaints.where((c) => CategoryMapping.getCanonicalCategory(c.category) == 'Roads & Infrastructure').length;
+    final sanitationCount = complaints.where((c) => CategoryMapping.getCanonicalCategory(c.category) == 'Sanitation').length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -327,31 +346,120 @@ class SuperDashboardHome extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(l10n.primaryServicesStatus, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(l10n.viewAll, style: TextStyle(fontSize: 12, color: themeConfig.primaryColor, fontWeight: FontWeight.w600)),
+            GestureDetector(
+              onTap: () {
+                _showAllServicesSheet(context, complaints, l10n, themeConfig);
+              },
+              child: Text(l10n.viewAll, style: TextStyle(fontSize: 12, color: themeConfig.primaryColor, fontWeight: FontWeight.w600)),
+            ),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _serviceStatusItem(Icons.water_drop, 'Water Supply', '92%', Colors.blue),
-            _serviceStatusItem(Icons.electric_bolt, 'Electricity', '88%', Colors.orange),
-            _serviceStatusItem(Icons.add_road, 'Roads & Infra', '85%', Colors.red),
-            _serviceStatusItem(Icons.cleaning_services, 'Sanitation', '90%', Colors.green),
+            GestureDetector(
+              onTap: () => _showAllServicesSheet(context, complaints, l10n, themeConfig),
+              child: _serviceStatusItem(Icons.water_drop, 'Water Supply', '$waterCount Problems', Colors.blue),
+            ),
+            GestureDetector(
+              onTap: () => _showAllServicesSheet(context, complaints, l10n, themeConfig),
+              child: _serviceStatusItem(Icons.electric_bolt, 'Electricity', '$electricityCount Problems', Colors.orange),
+            ),
+            GestureDetector(
+              onTap: () => _showAllServicesSheet(context, complaints, l10n, themeConfig),
+              child: _serviceStatusItem(Icons.add_road, 'Roads & Infra', '$roadsCount Problems', Colors.red),
+            ),
+            GestureDetector(
+              onTap: () => _showAllServicesSheet(context, complaints, l10n, themeConfig),
+              child: _serviceStatusItem(Icons.cleaning_services, 'Sanitation', '$sanitationCount Problems', Colors.green),
+            ),
           ],
         ),
       ],
     );
   }
 
+  void _showAllServicesSheet(BuildContext context, List<Complaint> complaints, AppLocalizations l10n, dynamic themeConfig) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        final categories = CategoryMapping.getAllCategories();
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(l10n.primaryServicesStatus, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: scrollController,
+                      itemCount: categories.length,
+                      separatorBuilder: (_, __) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final cat = categories[index];
+                        final count = complaints.where((c) => CategoryMapping.getCanonicalCategory(c.category) == cat).length;
+                        final icon = CategoryMapping.getIconForCategory(cat);
+                        final color = CategoryMapping.getColorForCategory(cat);
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: color.withOpacity(0.1),
+                            child: Icon(icon, color: color),
+                          ),
+                          title: Text(cat, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$count Problems',
+                              style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Provider.of<AppState>(context, listen: false).setSuperAdminTabIndex(1);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _serviceStatusItem(IconData icon, String label, String value, Color color) {
     return Column(
       children: [
-        CircleAvatar(backgroundColor: color.withValues(alpha: 0.1), radius: 24, child: Icon(icon, color: color)),
+        CircleAvatar(backgroundColor: color.withOpacity(0.1), radius: 24, child: Icon(icon, color: color)),
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+        Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
   }
@@ -364,7 +472,12 @@ class SuperDashboardHome extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(l10n.recentComplaints, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(l10n.viewAll, style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600)),
+            GestureDetector(
+              onTap: () {
+                appState.setSuperAdminTabIndex(1);
+              },
+              child: Text(l10n.viewAll, style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600)),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -392,7 +505,17 @@ class SuperDashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildTopMandals(AppLocalizations l10n) {
+  Widget _buildTopMandals(AppLocalizations l10n, List<Complaint> complaints, BuildContext context) {
+    final urbanCount = complaints.where((c) => c.mandalName == 'Part-Rajahmundry Urban Mandal / RMC' || c.mandalName.toLowerCase().contains('urban') || c.mandalName.toLowerCase().contains('rmc')).length;
+    final ruralCount = complaints.where((c) => c.mandalName == 'Rajahmundry Rural' || c.mandalName.toLowerCase().contains('rural')).length;
+    final kadiamCount = complaints.where((c) => c.mandalName == 'Kadiam' || c.mandalName.toLowerCase().contains('kadiam')).length;
+
+    final mandalData = [
+      {'name': 'Rajahmundry Urban', 'count': urbanCount},
+      {'name': 'Rajahmundry Rural', 'count': ruralCount},
+      {'name': 'Kadiam', 'count': kadiamCount},
+    ]..sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -400,7 +523,12 @@ class SuperDashboardHome extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(l10n.topMandals, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(l10n.viewAll, style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600)),
+            GestureDetector(
+              onTap: () {
+                Provider.of<AppState>(context, listen: false).setSuperAdminTabIndex(1);
+              },
+              child: Text(l10n.viewAll, style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600)),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -409,11 +537,11 @@ class SuperDashboardHome extends StatelessWidget {
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
           child: Column(
             children: [
-              _mandalRow('1', 'Rajanagaram', '132'),
+              _mandalRow('1', mandalData[0]['name'] as String, '${mandalData[0]['count']} Complaints'),
               const Divider(height: 24),
-              _mandalRow('2', 'Amalapuram', '118'),
+              _mandalRow('2', mandalData[1]['name'] as String, '${mandalData[1]['count']} Complaints'),
               const Divider(height: 24),
-              _mandalRow('3', 'Mandapeta', '98'),
+              _mandalRow('3', mandalData[2]['name'] as String, '${mandalData[2]['count']} Complaints'),
             ],
           ),
         ),
@@ -427,7 +555,7 @@ class SuperDashboardHome extends StatelessWidget {
         Text(index, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
         const SizedBox(width: 16),
         Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600))),
-        Text(count, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(count, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black54)),
       ],
     );
   }
@@ -447,7 +575,9 @@ class SuperDashboardHome extends StatelessWidget {
             _actionBtn(context, Icons.campaign, 'Broadcast', Colors.blue, () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateAnnouncementScreen()));
             }),
-            _actionBtn(context, Icons.update, 'Ward\nUpdates', Colors.orange, () {}),
+            _actionBtn(context, Icons.update, 'Ward\nUpdates', Colors.orange, () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWardScreen()));
+            }),
             _actionBtn(context, Icons.groups, 'Meetings', Colors.green, () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const MeetingsListScreen()));
             }),

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../../themes/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -58,31 +59,65 @@ class _AdminNavHolderState extends State<AdminNavHolder> {
     });
   }
 
+  void _navigateToPolling() {
+    setState(() {
+      _currentIndex = 2;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    if (appState.requestedWardAdminTabIndex != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentIndex = appState.requestedWardAdminTabIndex!;
+          });
+          appState.clearWardAdminTabIndex();
+        }
+      });
+    }
+
     final List<Widget> screens = [
-      AdminDashboardTab(onNavigateToComplaints: _navigateToComplaints),
+      AdminDashboardTab(
+        onNavigateToComplaints: _navigateToComplaints,
+        onNavigateToPolling: _navigateToPolling,
+        onMenuPressed: () {
+          _scaffoldKey.currentState?.openDrawer();
+        },
+      ),
       const AdminComplaintsTab(),
-      const AdminServicesTab(),
       const AdminPollingTab(),
       const AdminProfileScreen(),
     ];
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: AppColors.background,
-      drawer: const AdminDrawer(),
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
-          Positioned(
-            left: 0, right: 0, bottom: 0,
-            child: _buildCustomBottomNav(),
-          ),
-        ],
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: AppColors.background,
+        drawer: const AdminDrawer(),
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: _currentIndex,
+              children: screens,
+            ),
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: _buildCustomBottomNav(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -92,7 +127,6 @@ class _AdminNavHolderState extends State<AdminNavHolder> {
     final items = [
       {'icon': Icons.home_outlined, 'activeIcon': Icons.home, 'label': l10n.home},
       {'icon': Icons.assignment_outlined, 'activeIcon': Icons.assignment, 'label': l10n.complaints},
-      {'icon': Icons.grid_view_outlined, 'activeIcon': Icons.grid_view, 'label': l10n.services},
       {'icon': Icons.how_to_vote_outlined, 'activeIcon': Icons.how_to_vote, 'label': l10n.polling},
       {'icon': Icons.person_outline, 'activeIcon': Icons.person, 'label': l10n.profile},
     ];
@@ -140,9 +174,9 @@ class _AdminNavHolderState extends State<AdminNavHolder> {
   }
 }
 
-Widget _buildPremiumHeader(String title, {IconData icon = Icons.apps}) {
+Widget _buildPremiumHeader(String title, {IconData icon = Icons.apps, BuildContext? context, VoidCallback? onBack}) {
   return Container(
-    padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+    padding: const EdgeInsets.only(top: 60, left: 16, right: 24, bottom: 24),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
@@ -150,6 +184,17 @@ Widget _buildPremiumHeader(String title, {IconData icon = Icons.apps}) {
     ),
     child: Row(
       children: [
+        if (onBack != null || (context != null && Navigator.canPop(context))) ...[
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+            onPressed: onBack ?? () {
+              if (context != null && Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -167,8 +212,15 @@ Widget _buildPremiumHeader(String title, {IconData icon = Icons.apps}) {
 
 class AdminDashboardTab extends StatelessWidget {
   final VoidCallback onNavigateToComplaints;
+  final VoidCallback onNavigateToPolling;
+  final VoidCallback? onMenuPressed;
 
-  const AdminDashboardTab({super.key, required this.onNavigateToComplaints});
+  const AdminDashboardTab({
+    super.key,
+    required this.onNavigateToComplaints,
+    required this.onNavigateToPolling,
+    this.onMenuPressed,
+  });
 
   Future<void> _handleUploadWork(BuildContext context, AppState appState) async {
     showModalBottomSheet(
@@ -377,9 +429,7 @@ class AdminDashboardTab extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () {
-               Scaffold.of(context).openDrawer();
-            },
+            onTap: onMenuPressed ?? () {},
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
@@ -529,15 +579,16 @@ class AdminDashboardTab extends StatelessWidget {
 
   Widget _buildOverviewSection(BuildContext context, AppLocalizations l10n) {
     final appState = Provider.of<AppState>(context);
-    final myWardName = appState.currentUser?.wardName ?? '';
-    final allComplaints = appState.complaints.where((c) => c.wardName == myWardName).toList();
+    final user = appState.currentUser;
+    final allComplaints = appState.complaintsForWardOfficer(user);
     
     final total = allComplaints.length;
     final resolved = allComplaints.where((c) => c.status == ComplaintStatus.resolved).length;
     final pending = allComplaints.where((c) => c.status == ComplaintStatus.submitted).length;
     final inReview = allComplaints.where((c) => c.status == ComplaintStatus.inProgress).length;
     
-    final completedToday = allComplaints.where((c) => c.status == ComplaintStatus.resolved && c.resolvedAt != null && c.resolvedAt!.day == DateTime.now().day).length;
+    final now = DateTime.now();
+    final completedToday = allComplaints.where((c) => c.status == ComplaintStatus.resolved && c.resolvedAt != null && c.resolvedAt!.day == now.day && c.resolvedAt!.month == now.month).length;
 
     return GridView.count(
       crossAxisCount: 2,
@@ -545,61 +596,75 @@ class AdminDashboardTab extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.15,
+      childAspectRatio: 1.0,
       children: [
-        _buildStatCard(l10n.total, total.toString(), '+${completedToday > 0 ? completedToday : 1}', AppColors.primary, Icons.assignment_outlined),
-        _buildStatCard(l10n.resolved, resolved.toString(), '+${completedToday > 0 ? completedToday : 2}', AppColors.success, Icons.check_circle_outline),
-        _buildStatCard(l10n.pending, pending.toString(), '-1', AppColors.warning, Icons.pending_actions),
-        _buildStatCard(l10n.inReview, inReview.toString(), '+0', AppColors.info, Icons.rate_review_outlined),
+        _buildStatCard(l10n.total, total.toString(), 'Live Data', AppColors.primary, Icons.assignment_outlined, () {
+          appState.setWardAdminTabIndex(1, filter: 'All');
+        }),
+        _buildStatCard(l10n.resolved, resolved.toString(), '+$completedToday Today', AppColors.success, Icons.check_circle_outline, () {
+          appState.setWardAdminTabIndex(1, filter: 'Resolved');
+        }),
+        _buildStatCard(l10n.pending, pending.toString(), '$pending Pending', AppColors.warning, Icons.pending_actions, () {
+          appState.setWardAdminTabIndex(1, filter: 'Pending');
+        }),
+        _buildStatCard(l10n.inReview, inReview.toString(), '$inReview Active', AppColors.info, Icons.rate_review_outlined, () {
+          appState.setWardAdminTabIndex(1, filter: 'In Review');
+        }),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String count, String growth, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15, offset: const Offset(0, 6))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-                child: Text(growth, style: AppStyles.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.w800, fontSize: 11)),
-              )
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(count, style: AppStyles.heading.copyWith(fontSize: 28)),
-              const SizedBox(height: 2),
-              Text(title, style: AppStyles.caption),
-            ],
-          ),
-        ],
+  Widget _buildStatCard(String title, String count, String growth, Color color, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15, offset: const Offset(0, 6))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                  child: Text(growth, style: AppStyles.caption.copyWith(color: color, fontWeight: FontWeight.w800, fontSize: 10)),
+                )
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(count, style: AppStyles.heading.copyWith(fontSize: 26)),
+                ),
+                const SizedBox(height: 2),
+                Text(title, style: AppStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRecentComplaints(BuildContext context, AppLocalizations l10n) {
     final appState = Provider.of<AppState>(context);
-    final myWardName = appState.currentUser?.wardName ?? '';
-    final complaints = appState.complaints.where((c) => c.wardName == myWardName).toList();
+    final user = appState.currentUser;
+    final complaints = appState.complaintsForWardOfficer(user);
     complaints.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final recentComplaints = complaints.take(3).toList();
 
@@ -660,11 +725,8 @@ class AdminDashboardTab extends StatelessWidget {
     final services = [
       {'icon': Icons.add_a_photo, 'title': l10n.uploadWork, 'color1': const Color(0xFF60A5FA), 'color2': const Color(0xFF2563EB), 'action': () => _handleUploadWork(context, appState)},
       {'icon': Icons.campaign, 'title': l10n.broadcast, 'color1': const Color(0xFF34D399), 'color2': const Color(0xFF059669), 'action': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateAnnouncementScreen()))},
-      {'icon': Icons.update, 'title': l10n.wardUpdates, 'color1': const Color(0xFFFBBF24), 'color2': const Color(0xFFD97706), 'action': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWardScreen()))},
       {'icon': Icons.groups, 'title': l10n.meetingsEvents.split(' ').first, 'color1': const Color(0xFFA78BFA), 'color2': const Color(0xFF7C3AED), 'action': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeetingsListScreen()))},
-      {'icon': Icons.construction, 'title': l10n.developmentWorks, 'color1': const Color(0xFF2DD4BF), 'color2': const Color(0xFF0D9488), 'action': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWardScreen()))},
-      {'icon': Icons.contacts, 'title': l10n.citizens, 'color1': const Color(0xFFF87171), 'color2': const Color(0xFFDC2626), 'action': () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming Soon')))},
-      {'icon': Icons.how_to_vote, 'title': l10n.polling, 'color1': const Color(0xFF818CF8), 'color2': const Color(0xFF4F46E5), 'action': () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming Soon')))},
+      {'icon': Icons.how_to_vote, 'title': l10n.polling, 'color1': const Color(0xFF818CF8), 'color2': const Color(0xFF4F46E5), 'action': onNavigateToPolling},
       {'icon': Icons.list_alt, 'title': l10n.taskList, 'color1': const Color(0xFFF472B6), 'color2': const Color(0xFFDB2777), 'action': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminTasksScreen()))},
     ];
 
@@ -761,12 +823,12 @@ class AdminComplaintsTab extends StatefulWidget {
 }
 
 class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
-  String _selectedStatus = 'All';
   final List<String> _statuses = ['All', 'Pending', 'In Review', 'Resolved'];
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final _selectedStatus = appState.wardAdminActiveFilter;
     final myWardName = appState.currentUser?.wardName ?? '';
     var complaints = appState.complaints.where((c) => c.wardName == myWardName).toList();
     
@@ -784,7 +846,11 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
         children: [
           Column(
             children: [
-              _buildPremiumHeader('Complaints', icon: Icons.assignment_outlined),
+              _buildPremiumHeader(
+                'Complaints',
+                icon: Icons.assignment_outlined,
+                onBack: () => appState.setWardAdminTabIndex(0),
+              ),
               Expanded(
                 child: Column(
                   children: [
@@ -825,7 +891,7 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
                           final status = _statuses[index];
                           final isSelected = status == _selectedStatus;
                           return GestureDetector(
-                            onTap: () => setState(() => _selectedStatus = status),
+                            onTap: () => appState.setWardAdminActiveFilter(status),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               margin: const EdgeInsets.only(right: 12),
@@ -998,7 +1064,11 @@ class AdminPollingTab extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _buildPremiumHeader('Polling Dashboard', icon: Icons.how_to_vote_outlined),
+          _buildPremiumHeader(
+            'Polling Dashboard', 
+            icon: Icons.how_to_vote_outlined,
+            onBack: () => Provider.of<AppState>(context, listen: false).setWardAdminTabIndex(0),
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
@@ -1200,9 +1270,11 @@ class AdminDrawer extends StatelessWidget {
                     _buildDrawerItem(context, l10n.privacyPolicy, Icons.shield, () {
                       Navigator.pop(context);
                     }),
-                    _buildDrawerItem(context, l10n.logout, Icons.logout, () {
-                      Navigator.pop(context);
-                      appState.logout();
+                    _buildDrawerItem(context, l10n.logout, Icons.logout, () async {
+                      await appState.logout();
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+                      }
                     }, isDanger: true),
                   ],
                 ),
@@ -1417,18 +1489,39 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isSaving = false;
 
-  Future<void> _pickImage() async {
-    try {
-      final appState = Provider.of<AppState>(context, listen: false);
-      final userId = appState.currentUser?.id ?? 'user';
-      final name = appState.currentUser?.name ?? '';
-      final phone = appState.currentUser?.phoneNumber ?? '';
+  void _showInfoDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CLOSE', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Future<void> _pickImage() async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final userId = appState.currentUser?.id ?? 'user';
+    final name = appState.currentUser?.name ?? '';
+    final phone = appState.currentUser?.phoneNumber ?? '';
+
+    try {
       final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
       if (pickedFile != null) {
+        appState.updateProfilePhotoLocally(pickedFile.path);
         String finalPath = pickedFile.path;
+        Uint8List? bytes;
         
-        if (!kIsWeb) {
+        if (kIsWeb) {
+          bytes = await pickedFile.readAsBytes();
+        } else {
           final appDir = await getApplicationDocumentsDirectory();
           final timestamp = DateTime.now().millisecondsSinceEpoch;
           final destPath = '${appDir.path}/profile_${userId}_$timestamp.jpg';
@@ -1437,8 +1530,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         }
         
         setState(() => _isSaving = true);
-        await appState.updateUserProfile(name, phone, finalPath);
-        setState(() => _isSaving = false);
+        await appState.updateUserProfile(name, phone, finalPath, profilePhotoBytes: bytes);
 
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
@@ -1449,6 +1541,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       }
     } catch (e) {
       debugPrint('Error picking profile image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update profile: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -1466,6 +1567,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              appState.setWardAdminTabIndex(0);
+            }
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -1533,9 +1644,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   const SizedBox(height: 16),
                   _buildProfileRow(Icons.account_balance_outlined, l10n.departmentPerformance, 'Ward Secretariat'), // Default dept
                   const SizedBox(height: 24),
-                  _buildActionTile(context, l10n.editProfile, Icons.edit, () {}),
-                  _buildActionTile(context, l10n.changePassword, Icons.lock_outline, () {}),
-                  _buildActionTile(context, l10n.notificationSettings, Icons.notifications_active_outlined, () {}),
+                  _buildActionTile(context, l10n.editProfile, Icons.edit, () {
+                    _showInfoDialog('Edit Profile', 'Please contact Secretariat HR or Mandal Admin to update your official profile information.');
+                  }),
+                  _buildActionTile(context, l10n.changePassword, Icons.lock_outline, () {
+                    _showInfoDialog('Change Password', 'Password change instructions have been sent to your official mobile number: ${user?.phoneNumber ?? ""}.');
+                  }),
+                  _buildActionTile(context, l10n.notificationSettings, Icons.notifications_active_outlined, () {
+                    _showInfoDialog('Notification Settings', 'Urgent complaint push notifications and WhatsApp alert relays are active by default for your ward.');
+                  }),
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1560,9 +1677,11 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ),
                   const SizedBox(height: 24),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context); // Optional, but usually profile handles it
-                      appState.logout();
+                    onTap: () async {
+                      await appState.logout();
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -1575,7 +1694,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       alignment: Alignment.center,
                       child: Text(l10n.logout, style: AppStyles.body.copyWith(color: AppColors.danger, fontWeight: FontWeight.bold)),
                     ),
-                  )
+                  ),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
@@ -1590,13 +1710,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       children: [
         Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: const Color(0xFF94A3B8))),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: AppStyles.caption.copyWith(color: const Color(0xFF94A3B8))),
-            const SizedBox(height: 4),
-            Text(value, style: AppStyles.body.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppStyles.caption.copyWith(color: const Color(0xFF94A3B8))),
+              const SizedBox(height: 4),
+              Text(value, style: AppStyles.body.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)), maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       ],
     );

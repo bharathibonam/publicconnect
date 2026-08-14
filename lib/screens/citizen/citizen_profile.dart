@@ -8,10 +8,13 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../services/translation_service.dart';
 import '../../models/complaint.dart';
+import '../../utils/camera_helper.dart';
+import 'dart:convert';
 
 
 class CitizenProfileScreen extends StatefulWidget {
-  const CitizenProfileScreen({super.key});
+  final VoidCallback? onBackPressed;
+  const CitizenProfileScreen({super.key, this.onBackPressed});
 
   @override
   State<CitizenProfileScreen> createState() => _CitizenProfileScreenState();
@@ -22,6 +25,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   File? _profileImage;
+  Uint8List? _profileImageBytes;
   final ImagePicker _picker = ImagePicker();
   bool _isSaving = false;
 
@@ -33,28 +37,89 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
     _phoneController = TextEditingController(text: user?.phoneNumber);
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
+    final appState = Provider.of<AppState>(context, listen: false);
     try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (kIsWeb && source == ImageSource.camera) {
+        final bytes = await CameraHelper.pickImageFromCamera();
+        if (bytes != null) {
+          if (mounted) {
+            setState(() {
+              _profileImageBytes = bytes;
+            });
+            // Convert to data URI for instant preview in other views
+            final base64Url = 'data:image/jpeg;base64,${base64.encode(bytes)}';
+            appState.updateProfilePhotoLocally(base64Url);
+          }
+        }
+        return;
+      }
+
+      final pickedFile = await _picker.pickImage(source: source, imageQuality: 85);
       if (pickedFile != null) {
-        // Copy to permanent app documents directory so it survives cache clears
-        final appDir = await getApplicationDocumentsDirectory();
-        // Capture userId before async gap
-        final userId = mounted
-            ? (Provider.of<AppState>(context, listen: false).currentUser?.id ?? 'user')
-            : 'user';
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final destPath = '${appDir.path}/profile_${userId}_$timestamp.jpg';
-        final destFile = await File(pickedFile.path).copy(destPath);
-        if (mounted) {
-          setState(() {
-            _profileImage = destFile;
-          });
+        appState.updateProfilePhotoLocally(pickedFile.path);
+        if (kIsWeb) {
+          final bytes = await pickedFile.readAsBytes();
+          if (mounted) {
+            setState(() {
+              _profileImageBytes = bytes;
+            });
+          }
+        } else {
+          // Copy to permanent app documents directory so it survives cache clears
+          final appDir = await getApplicationDocumentsDirectory();
+          // Capture userId before async gap
+          final userId = mounted
+              ? (Provider.of<AppState>(context, listen: false).currentUser?.id ?? 'user')
+              : 'user';
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final destPath = '${appDir.path}/profile_${userId}_$timestamp.jpg';
+          final destFile = await File(pickedFile.path).copy(destPath);
+          if (mounted) {
+            setState(() {
+              _profileImage = destFile;
+            });
+          }
         }
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
     }
+  }
+
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Select Profile Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -78,13 +143,19 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: ModalRoute.of(context)?.canPop == true
+      appBar: ModalRoute.of(context)?.canPop == true || widget.onBackPressed != null
           ? AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else if (widget.onBackPressed != null) {
+                    widget.onBackPressed!();
+                  }
+                },
               ),
             )
           : null,
@@ -122,13 +193,15 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      final ImageProvider? img = _profileImage != null
-                          ? (kIsWeb ? NetworkImage(_profileImage!.path) as ImageProvider : FileImage(_profileImage!))
-                          : (user?.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
-                              ? (user.profilePhotoUrl!.startsWith('http') || kIsWeb
-                                  ? NetworkImage(user.profilePhotoUrl!) as ImageProvider
-                                  : FileImage(File(user.profilePhotoUrl!)))
-                              : null);
+                      final ImageProvider? img = _profileImageBytes != null
+                          ? MemoryImage(_profileImageBytes!) as ImageProvider
+                          : (_profileImage != null
+                              ? (kIsWeb ? NetworkImage(_profileImage!.path) as ImageProvider : FileImage(_profileImage!))
+                              : (user?.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
+                                  ? (user.profilePhotoUrl!.startsWith('http') || kIsWeb
+                                      ? NetworkImage(user.profilePhotoUrl!) as ImageProvider
+                                      : FileImage(File(user.profilePhotoUrl!)))
+                                  : null));
                       if (img != null) {
                         _showFullScreenImage(img);
                       }
@@ -136,14 +209,16 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                     child: CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.grey.shade300,
-                      backgroundImage: _profileImage != null
-                          ? (kIsWeb ? NetworkImage(_profileImage!.path) as ImageProvider : FileImage(_profileImage!))
-                          : (user?.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
-                              ? (user.profilePhotoUrl!.startsWith('http') || kIsWeb
-                                  ? NetworkImage(user.profilePhotoUrl!) as ImageProvider
-                                  : FileImage(File(user.profilePhotoUrl!)))
-                              : null),
-                      child: (_profileImage == null && (user?.profilePhotoUrl == null || user!.profilePhotoUrl!.isEmpty))
+                      backgroundImage: _profileImageBytes != null
+                          ? MemoryImage(_profileImageBytes!) as ImageProvider
+                          : (_profileImage != null
+                              ? (kIsWeb ? NetworkImage(_profileImage!.path) as ImageProvider : FileImage(_profileImage!))
+                              : (user?.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
+                                  ? (user.profilePhotoUrl!.startsWith('http') || kIsWeb
+                                      ? NetworkImage(user.profilePhotoUrl!) as ImageProvider
+                                      : FileImage(File(user.profilePhotoUrl!)))
+                                  : null)),
+                      child: (_profileImageBytes == null && _profileImage == null && (user?.profilePhotoUrl == null || user!.profilePhotoUrl!.isEmpty))
                           ? const Icon(Icons.person, size: 50, color: Colors.grey)
                           : null,
                     ),
@@ -152,7 +227,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                     bottom: 0,
                     right: 0,
                     child: GestureDetector(
-                      onTap: _pickImage,
+                      onTap: _showImageSourceSheet,
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
@@ -191,7 +266,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _nameController,
-                        enabled: false,
+                        enabled: true,
                         style: const TextStyle(fontSize: 15, color: Colors.black87),
                         decoration: InputDecoration(
                           labelText: Trans.t('name', isTelugu),
@@ -234,11 +309,11 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                           onPressed: _isSaving ? null : () async {
                             if (_formKey.currentState!.validate()) {
                               setState(() => _isSaving = true);
-                              final appState = Provider.of<AppState>(context, listen: false);
                               await appState.updateUserProfile(
                                 _nameController.text.trim(),
                                 _phoneController.text.trim(),
                                 _profileImage?.path,
+                                profilePhotoBytes: _profileImageBytes,
                               );
                               setState(() => _isSaving = false);
                               if (context.mounted) {
@@ -249,7 +324,11 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                                     backgroundColor: Theme.of(context).primaryColor,
                                   ),
                                 );
-                                Navigator.pop(context);
+                                 if (Navigator.canPop(context)) {
+                                  Navigator.pop(context);
+                                } else if (widget.onBackPressed != null) {
+                                  widget.onBackPressed!();
+                                }
                               }
                             }
                           },
@@ -356,13 +435,15 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                   Trans.t('logout', isTelugu),
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
-                onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                  appState.logout();
+                onPressed: () async {
+                  await appState.logout();
+                  if (context.mounted) {
+                    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+                  }
                 },
               ),
             ),
-            const SizedBox(height: 80),
+            const SizedBox(height: 120),
           ],
         ),
       ),

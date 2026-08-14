@@ -60,7 +60,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get complaintAnalytics => 'ఫిర్యాదుల విశ్లేషణ';
 
   @override
-  String get complaintDashboard => 'ఫिర్యాదుల డాష్‌బోర్డ్';
+  String get complaintDashboard => 'ఫిర్యాదుల డ్యాష్బోర్డ్';
 
   @override
   String get completionPercent => 'పూర్తయిన శాతం';
@@ -72,7 +72,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get constituencyNameJsp => 'పిఠాపురం';
 
   @override
-  String get constituencyNameTdp => 'రాజమండ్రి';
+  String get constituencyNameTdp => 'రాజమహేంద్రవరం';
 
   @override
   String get constituencyOffice => 'నియోజకవర్గ కార్యాలయం';
@@ -96,7 +96,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get escalated => 'త్వరితగతిన పరిష్కరించాల్సినవి';
 
   @override
-  String get fileComplaint => 'కొత్త ఫిర్యాదు';
+  String get fileComplaint => 'ఫిర్యాదు నమోదు';
 
   @override
   String get findLocation => 'స్థానాన్ని కనుగొను';
@@ -216,7 +216,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get resolutionProgress => 'పరిష్కార పురోగతి';
 
   @override
-  String get resolved => 'పరిష్కరించబడింది';
+  String get resolved => 'పరిష్కరించబడినవి';
 
   @override
   String get slaBreached => 'SLA ఉల్లంఘించబడింది';
@@ -228,7 +228,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get subCategoryDetails => 'ఉప-వర్గం వివరాలు';
 
   @override
-  String get submitted => 'సమర్పించబడింది';
+  String get submitted => 'సమర్పించినవి';
 
   @override
   String get supportSection => 'మద్దతు & సహాయం';
@@ -255,7 +255,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get totalComplaints => 'మొత్తం ఫిర్యాదులు';
 
   @override
-  String get track => 'ట్రాక్';
+  String get track => 'స్థితి';
 
   @override
   String get trackStatus => 'స్థితిని ట్రాక్ చేయండి';
@@ -373,7 +373,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get voiceComplaint => 'వాయిస్ ఫిర్యాదు';
 
   @override
-  String get trackComplaint => 'ఫిర్యాదు ట్రాక్ చేయండి';
+  String get trackComplaint => 'ఫిర్యాదు స్థితి';
 
   @override
   String get services => 'సేవలు';
@@ -716,7 +716,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get exportExcel => 'ఎగుమతి (ఎక్సెల్)';
 
   @override
-  String get constituencyOverview => 'నియోజకవర్గ అవలోకనం';
+  String get constituencyOverview => 'నియోజకవర్గ సమాచారం';
 
   @override
   String get households => 'కుటుంబాలు';
@@ -842,4 +842,72 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get villages => 'గ్రామాలు';
+
+  @override
+  String get rejected => 'తిరస్కరించబడింది';
+
+  @override
+  String get onHold => 'నిలిపివేయబడింది';
+
+  @override
+  String hoursLeft(Object count) {
+    return '$count గంటలు మిగిలివున్నవి';
+  }
+
+  @override
+  String get evidencePhoto => 'సమస్య సాక్ష్యం';
+
+  @override
+  String get resolutionEvidence => 'పరిష్కార సాక్ష్యం';
+
+  @override
+  String get evidenceVideos => 'వీడియో సాక్ష్యం';
+
+  @override
+  String get primaryInformation => 'ప్రాథమిక సమాచారం';
+
+  @override
+  String get locationDetails => 'స్థల వివరాలు';
+
+  @override
+  String get createdDate => 'సృష్టించబడిన తేదీ';
+
+  @override
+  String get lastUpdatedDate => 'చివరి నవీకరణ';
+
+  @override
+  String get complaintId => 'ఫిర్యాదు ID';
+
+  @override
+  String get category => 'వర్గం';
+
+  @override
+  String get citizenName => 'పౌరుని పేరు';
+
+  @override
+  String get address => 'చిరునామా';
+
+  @override
+  String get panchayat => 'పంచాయతీ';
+
+  @override
+  String get description => 'వివరణ';
+
+  @override
+  String get uploadedMedia => 'చిత్రాలు & వీడియోలు';
+
+  @override
+  String get updatedJustNow => 'ఇప్పుడే నవీకరించబడింది';
+
+  @override
+  String get complaintsToday => 'ఈ రోజు ఫిర్యాదులు';
+
+  @override
+  String get resolvedToday => 'ఈ రోజు పరిష్కరించబడినవి';
+
+  @override
+  String get mlaUpdatesAndReels => 'ఎమ్మెల్యే అప్‌డేట్స్ & రీల్స్';
+
+  @override
+  String get comingSoon => 'త్వరలో అందుబాటులోకి రానుంది';
 }

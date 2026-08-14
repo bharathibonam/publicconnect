@@ -16,12 +16,37 @@ class SuperComplaintsTab extends StatelessWidget {
     final themeConfig = Provider.of<ThemeProvider>(context).activeParty;
     final l10n = AppLocalizations.of(context)!;
 
+    final activeFilter = appState.superAdminActiveFilter;
+    final allComplaints = appState.complaints;
+    
+    final int totalCount = allComplaints.length;
+    final int pendingCount = allComplaints.where((c) => c.status == ComplaintStatus.submitted).length;
+    final int inProgressCount = allComplaints.where((c) => c.status == ComplaintStatus.inProgress).length;
+    final int resolvedCount = allComplaints.where((c) => c.status == ComplaintStatus.resolved).length;
+
+    final filteredComplaints = allComplaints.where((c) {
+      if (activeFilter == 'all') return true;
+      if (activeFilter == 'pending') return c.status == ComplaintStatus.submitted;
+      if (activeFilter == 'inProgress') return c.status == ComplaintStatus.inProgress;
+      if (activeFilter == 'resolved') return c.status == ComplaintStatus.resolved;
+      return true;
+    }).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.arrow_back, color: Colors.black87),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Provider.of<AppState>(context, listen: false).setSuperAdminTabIndex(0);
+            }
+          },
+        ),
         title: Text(l10n.complaints, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
           IconButton(icon: const Icon(Icons.filter_list, color: Colors.black87), onPressed: (){}),
@@ -34,10 +59,18 @@ class SuperComplaintsTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _filterChip('All', '1,254', true, themeConfig.primaryColor),
-                _filterChip('Pending', '156', false, Colors.grey),
-                _filterChip('In Review', '50', false, Colors.grey),
-                _filterChip('Resolved', '1,048', false, Colors.grey),
+                _filterChip('All', totalCount.toString(), activeFilter == 'all', themeConfig.primaryColor, () {
+                  appState.setSuperAdminActiveFilter('all');
+                }),
+                _filterChip('Pending', pendingCount.toString(), activeFilter == 'pending', themeConfig.primaryColor, () {
+                  appState.setSuperAdminActiveFilter('pending');
+                }),
+                _filterChip('In Review', inProgressCount.toString(), activeFilter == 'inProgress', themeConfig.primaryColor, () {
+                  appState.setSuperAdminActiveFilter('inProgress');
+                }),
+                _filterChip('Resolved', resolvedCount.toString(), activeFilter == 'resolved', themeConfig.primaryColor, () {
+                  appState.setSuperAdminActiveFilter('resolved');
+                }),
               ],
             ),
           ),
@@ -57,7 +90,7 @@ class SuperComplaintsTab extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: appState.complaints.isEmpty
+            child: filteredComplaints.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -70,9 +103,9 @@ class SuperComplaintsTab extends StatelessWidget {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: appState.complaints.length,
+                    itemCount: filteredComplaints.length,
                     itemBuilder: (context, index) {
-                      final complaint = appState.complaints[index];
+                      final complaint = filteredComplaints[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Card(
@@ -94,31 +127,28 @@ class SuperComplaintsTab extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: (){},
-        backgroundColor: themeConfig.primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(l10n.registerNewComplaint, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
     );
   }
 
-  Widget _filterChip(String label, String count, bool isSelected, Color color) {
+  Widget _filterChip(String label, String count, bool isSelected, Color color, VoidCallback onTap) {
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.only(right: 4),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? color : Colors.grey.shade300),
-        ),
-        child: Column(
-          children: [
-            Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontSize: 11)),
-            const SizedBox(height: 2),
-            Text(count, style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 14)),
-          ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.only(right: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? color : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isSelected ? color : Colors.grey.shade300),
+          ),
+          child: Column(
+            children: [
+              Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(count, style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
         ),
       ),
     );

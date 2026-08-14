@@ -5,7 +5,8 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:http/http.dart' as http;
+import '../services/whisper_service.dart';
 import 'package:video_player/video_player.dart';
 
 /// A button that allows users to dictate text using speech-to-text.
@@ -26,110 +27,73 @@ class VoiceDictationButton extends StatefulWidget {
 }
 
 class _VoiceDictationButtonState extends State<VoiceDictationButton> {
-  final stt.SpeechToText _speech = stt.SpeechToText();
+  final AudioRecorder _recorder = AudioRecorder();
   bool _isListening = false;
-  String _lastWords = '';
 
   String _processTeluguText(String text) {
-    if (!widget.isTelugu) return text;
-    // Map Telugu number words and terminology to digits/English terms for better recognition
-    final Map<String, String> teluguNumbers = {
-      'సున్నా': '0',
-      'ఒకటి': '1',
-      'రెండు': '2',
-      'మూడు': '3',
-      'నాలుగు': '4',
-      'ఐదు': '5',
-      'ఆరు': '6',
-      'ఏడు': '7',
-      'ఎనిమిది': '8',
-      'తొమ్మిది': '9',
-      'పది': '10',
-      'వార్డు': 'Ward',
-      'వార్డ్': 'Ward',
-      'సమస్య': 'Issue',
-      'ఫిర్యాదు': 'Complaint',
-    };
-    
-    String processed = text;
-    teluguNumbers.forEach((word, digit) {
-      processed = processed.replaceAll(word, digit);
-    });
-    
-    return processed;
+    return text.trim();
   }
 
   Future<void> _toggleListen() async {
     if (_isListening) {
-      await _speech.stop();
-      setState(() => _isListening = false);
-    } else {
       try {
-        bool available = await _speech.initialize(
-          onStatus: (val) {
-            if (val == 'done' || val == 'notListening') {
-              setState(() => _isListening = false);
-            }
-          },
-          onError: (val) {
-            debugPrint('Speech error: $val');
-            setState(() => _isListening = false);
-          },
-        );
-
-        if (available) {
-          setState(() => _isListening = true);
-          _speech.listen(
-            listenOptions: stt.SpeechListenOptions(
-              localeId: widget.isTelugu ? 'te_IN' : 'en_US',
-            ),
-            onResult: (val) {
-              setState(() {
-                _lastWords = _processTeluguText(val.recognizedWords);
-                if (val.finalResult) {
-                  final text = widget.controller.text;
-                  widget.controller.text = text.isEmpty ? _lastWords : '$text $_lastWords';
-                  _isListening = false;
-                }
-              });
-            },
+        final path = await _recorder.stop();
+        setState(() => _isListening = false);
+        if (path != null && path.isNotEmpty) {
+          Uint8List audioBytes;
+          if (path.startsWith('blob:') || path.startsWith('http')) {
+            final res = await http.get(Uri.parse(path));
+            audioBytes = res.bodyBytes;
+          } else {
+            final file = File(path);
+            audioBytes = await file.readAsBytes();
+          }
+          final whisperRes = await WhisperService.transcribeAudio(
+            audioBytes: audioBytes,
+            language: widget.isTelugu ? 'te_IN' : 'en_IN',
           );
-        } else {
-          // Fallback simulation for devices without speech engines/emulators
-          _simulateDictation();
+          if (whisperRes['success'] == true && mounted) {
+            final text = (whisperRes['text'] ?? '').toString().trim();
+            if (text.isNotEmpty) {
+              final existing = widget.controller.text;
+              widget.controller.text = existing.isEmpty ? text : '$existing $text';
+            }
+          } else if (mounted) {
+            final err = whisperRes['error'] ?? (widget.isTelugu ? 'మాట్లాడటం ఏదీ గుర్తించబడలేదు. దయచేసి స్పష్టంగా మాట్లాడండి.' : 'No speech detected. Please speak clearly.');
+            _showError(err.toString());
+          }
         }
       } catch (e) {
-        debugPrint('Speech engine error: $e');
-        _simulateDictation();
+        debugPrint('Audio recording stop error: $e');
+        if (mounted) setState(() => _isListening = false);
+      }
+    } else {
+      try {
+        if (await _recorder.hasPermission()) {
+          setState(() => _isListening = true);
+          await _recorder.start(const RecordConfig(), path: '');
+        } else {
+          _showError(widget.isTelugu ? 'మైక్రోఫోన్ అనుమతి తిరస్కరించబడింది' : 'Microphone permission denied');
+        }
+      } catch (e) {
+        debugPrint('Recorder start error: $e');
+        _showError(widget.isTelugu ? 'వాయిస్ గుర్తింపు అందుబాటులో లేదు' : 'Speech recognition unavailable');
       }
     }
   }
 
-  void _simulateDictation() {
-    setState(() => _isListening = true);
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(widget.isTelugu 
-            ? 'భాషణ-నుండి-వచనం అనుకరణ ప్రారంభమైంది...' 
-            : 'Speech-to-text simulation started...'),
-        duration: const Duration(seconds: 2),
+        content: Text(message),
+        backgroundColor: Colors.red,
       ),
     );
-    Timer(const Duration(seconds: 3), () {
-      if (mounted && _isListening) {
-        final text = widget.controller.text;
-        final simulation = widget.isTelugu 
-            ? 'రోడ్డు గుంతల సమస్య పరిష్కరించండి.' 
-            : 'Immediate action required for pothole repair near the main cross road.';
-        widget.controller.text = text.isEmpty ? simulation : '$text $simulation';
-        setState(() => _isListening = false);
-      }
-    });
   }
 
   @override
   void dispose() {
-    _speech.stop();
+    _recorder.dispose();
     super.dispose();
   }
 

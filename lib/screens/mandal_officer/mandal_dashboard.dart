@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_demo_app/l10n/app_localizations.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../services/app_state.dart';
 import '../../themes/theme_provider.dart';
@@ -26,16 +29,35 @@ class MandalAdminNavHolder extends StatefulWidget {
 
 class _MandalAdminNavHolderState extends State<MandalAdminNavHolder> {
   int _currentIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final user = appState.currentUser;
+    if (appState.requestedMandalOfficerTabIndex != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentIndex = appState.requestedMandalOfficerTabIndex!;
+          });
+          appState.clearMandalOfficerTabIndex();
+        }
+      });
+    }
+
     final themeConfig = Provider.of<ThemeProvider>(context).activeParty;
     final l10n = AppLocalizations.of(context)!;
 
     final List<Widget> screens = [
-      MandalDashboardHomeTab(onNavigateToTab: (index) {
-        setState(() => _currentIndex = index);
-      }),
+      MandalDashboardHomeTab(
+        onNavigateToTab: (index) {
+          setState(() => _currentIndex = index);
+        },
+        onMenuPressed: () {
+          _scaffoldKey.currentState?.openDrawer();
+        },
+      ),
       const MandalComplaintsTab(),
       const MandalReportsTab(),
       const MandalOverviewTab(),
@@ -46,48 +68,132 @@ class _MandalAdminNavHolderState extends State<MandalAdminNavHolder> {
       ),
     ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_currentIndex != 0) {
           setState(() {
-            _currentIndex = index;
+            _currentIndex = 0;
           });
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: themeConfig.primaryColor,
-        unselectedItemColor: Colors.grey,
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_outlined),
-            activeIcon: const Icon(Icons.home),
-            label: l10n.home,
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: Drawer(
+          child: Column(
+            children: [
+              UserAccountsDrawerHeader(
+                decoration: BoxDecoration(color: themeConfig.primaryColor),
+                accountName: Text(user?.name ?? 'Mandal Officer', style: const TextStyle(fontWeight: FontWeight.bold)),
+                accountEmail: Text(user?.phoneNumber ?? ''),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 40, color: themeConfig.primaryColor),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.home_outlined),
+                title: Text(l10n.home),
+                selected: _currentIndex == 0,
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _currentIndex = 0);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.list_alt_outlined),
+                title: Text(l10n.complaint),
+                selected: _currentIndex == 1,
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _currentIndex = 1);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.bar_chart_outlined),
+                title: Text(l10n.reports),
+                selected: _currentIndex == 2,
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _currentIndex = 2);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.grid_view_outlined),
+                title: const Text('Services'),
+                selected: _currentIndex == 3,
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _currentIndex = 3);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: Text(l10n.profile),
+                selected: _currentIndex == 4,
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _currentIndex = 4);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Logout', style: TextStyle(color: Colors.red)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await appState.logout();
+                  if (context.mounted) {
+                    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+                  }
+                },
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.list_alt_outlined),
-            activeIcon: const Icon(Icons.list_alt),
-            label: l10n.complaint,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.bar_chart_outlined),
-            activeIcon: const Icon(Icons.bar_chart),
-            label: l10n.reports,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.grid_view_outlined),
-            activeIcon: const Icon(Icons.grid_view),
-            label: 'Services',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outline),
-            activeIcon: const Icon(Icons.person),
-            label: l10n.profile,
-          ),
-        ],
+        ),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: screens,
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: themeConfig.primaryColor,
+          unselectedItemColor: Colors.grey,
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home),
+              label: l10n.home,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.list_alt_outlined),
+              activeIcon: const Icon(Icons.list_alt),
+              label: l10n.complaint,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.bar_chart_outlined),
+              activeIcon: const Icon(Icons.bar_chart),
+              label: l10n.reports,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.grid_view_outlined),
+              activeIcon: const Icon(Icons.grid_view),
+              label: 'Services',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: l10n.profile,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -98,7 +204,8 @@ class _MandalAdminNavHolderState extends State<MandalAdminNavHolder> {
 // -----------------------------------------------------------------------------
 class MandalDashboardHomeTab extends StatefulWidget {
   final Function(int)? onNavigateToTab;
-  const MandalDashboardHomeTab({super.key, this.onNavigateToTab});
+  final VoidCallback? onMenuPressed;
+  const MandalDashboardHomeTab({super.key, this.onNavigateToTab, this.onMenuPressed});
 
   @override
   State<MandalDashboardHomeTab> createState() => _MandalDashboardHomeTabState();
@@ -112,6 +219,44 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
     final appState = Provider.of<AppState>(context);
     final themeConfig = Provider.of<ThemeProvider>(context).activeParty;
     final user = appState.currentUser;
+
+    final mandalComplaints = appState.complaintsForMandalOfficer(user);
+
+    final totalCount = mandalComplaints.length;
+    final newCount = mandalComplaints.where((c) => c.status == ComplaintStatus.submitted).length;
+    final inProgressCount = mandalComplaints.where((c) => c.status == ComplaintStatus.inProgress).length;
+    final resolvedCount = mandalComplaints.where((c) => c.status == ComplaintStatus.resolved).length;
+    final escalatedCount = mandalComplaints.where((c) => c.isPushed || DateTime.now().difference(c.createdAt).inHours >= 48).length;
+    final slaBreachedCount = mandalComplaints.where((c) => c.status != ComplaintStatus.resolved && DateTime.now().difference(c.createdAt).inHours >= 48).length;
+    final pendingCount = mandalComplaints.where((c) => c.status == ComplaintStatus.submitted || c.status == ComplaintStatus.inProgress).length;
+    final rejectedCount = mandalComplaints.where((c) => c.status == ComplaintStatus.rejected).length;
+
+    // Dynamic Today's Tasks
+    final now = DateTime.now();
+    final todayAssigned = mandalComplaints.where((c) => c.createdAt.day == now.day && c.createdAt.month == now.month && c.createdAt.year == now.year).length;
+    final meetingsCount = appState.meetings.length;
+    final reviewsCount = inProgressCount;
+    final dueToday = mandalComplaints.where((c) {
+      if (c.status == ComplaintStatus.resolved) return false;
+      final hours = now.difference(c.createdAt).inHours;
+      return hours >= 42 && hours < 48;
+    }).length;
+
+    // Dynamic Priority Queue
+    final highPriorityList = mandalComplaints.where((c) => c.priority == ComplaintPriority.high && c.status != ComplaintStatus.resolved).toList();
+    final medPriorityList = mandalComplaints.where((c) => c.priority == ComplaintPriority.medium && c.status != ComplaintStatus.resolved).toList();
+    final lowPriorityList = mandalComplaints.where((c) => c.priority == ComplaintPriority.low && c.status != ComplaintStatus.resolved).toList();
+
+    List<Complaint> activePriorityList;
+    if (_selectedPriorityFilter == 0) {
+      activePriorityList = highPriorityList;
+    } else if (_selectedPriorityFilter == 1) {
+      activePriorityList = medPriorityList;
+    } else {
+      activePriorityList = lowPriorityList;
+    }
+
+    final mandalTitle = user?.mandalName != null && user!.mandalName!.isNotEmpty ? user.mandalName! : 'Mandal Officer';
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -130,7 +275,12 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Icon(Icons.menu, color: Colors.white, size: 24),
+                  IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white, size: 24),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: widget.onMenuPressed ?? () {},
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -138,11 +288,13 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Mandal Officer App',
+                          'Mandal Officer',
                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         Text(
-                          'Bhupalapatnam Mandal',
+                          mandalTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11),
                         ),
                       ],
@@ -153,17 +305,7 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
                     tooltip: 'Quick Actions',
                     onPressed: () => OfficerInteractiveDialogs.showQuickActionsModal(context, themeConfig),
                   ),
-                  Stack(
-                    alignment: Alignment.topRight,
-                    children: [
-                      const NotificationBell(color: Colors.white),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                        child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
+                  const NotificationBell(color: Colors.white),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () {
@@ -193,7 +335,7 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Card (matching screenshot 1 - frame 1)
+            // Profile Card
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -205,7 +347,14 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: themeConfig.primaryColor.withOpacity(0.1),
-                      child: Icon(Icons.person_rounded, size: 32, color: themeConfig.primaryColor),
+                      backgroundImage: user?.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
+                          ? (user.profilePhotoUrl!.startsWith('http') || kIsWeb
+                              ? NetworkImage(user.profilePhotoUrl!)
+                              : FileImage(File(user.profilePhotoUrl!)) as ImageProvider)
+                          : null,
+                      child: (user?.profilePhotoUrl == null || user!.profilePhotoUrl!.isEmpty)
+                          ? Icon(Icons.person_rounded, size: 32, color: themeConfig.primaryColor)
+                          : null,
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -213,25 +362,25 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user?.name ?? 'Ramesh Kumar',
+                            user?.name ?? 'Mandal Officer',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 2),
                           const Text(
-                            'Mandal Officer',
+                            'Mandal Administrative Officer',
                             style: TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w500),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Bhupalapatnam Mandal',
+                            mandalTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                           ),
                         ],
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.phone, color: Colors.green),
-                      onPressed: () => OfficerInteractiveDialogs.showCallCitizenDialog(context, themeConfig),
                     ),
                   ],
                 ),
@@ -250,16 +399,32 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
-              childAspectRatio: 0.9,
+              childAspectRatio: 0.82,
               children: [
-                _buildStatBox('Total', '256', themeConfig.primaryColor),
-                _buildStatBox('New', '26', Colors.blue),
-                _buildStatBox('In Progress', '78', Colors.orange),
-                _buildStatBox('Resolved', '142', Colors.green),
-                _buildStatBox('Escalated', '10', Colors.red.shade400),
-                _buildStatBox('SLA Breached', '7', Colors.red.shade800),
-                _buildStatBox('Pending', '24', Colors.purple),
-                _buildStatBox('Rejected', '3', Colors.blueGrey),
+                _buildStatBox('Total', totalCount.toString(), themeConfig.primaryColor, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'All');
+                }),
+                _buildStatBox('New', newCount.toString(), Colors.blue, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'New');
+                }),
+                _buildStatBox('In Progress', inProgressCount.toString(), Colors.orange, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'In Progress');
+                }),
+                _buildStatBox('Resolved', resolvedCount.toString(), Colors.green, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'Resolved');
+                }),
+                _buildStatBox('Escalated', escalatedCount.toString(), Colors.red.shade400, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'Escalated');
+                }),
+                _buildStatBox('SLA Breached', slaBreachedCount.toString(), Colors.red.shade800, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'SLA Breached');
+                }),
+                _buildStatBox('Pending', pendingCount.toString(), Colors.purple, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'Pending');
+                }),
+                _buildStatBox('Rejected', rejectedCount.toString(), Colors.blueGrey, () {
+                  appState.setMandalOfficerTabIndex(1, filter: 'Rejected');
+                }),
               ],
             ),
             const SizedBox(height: 20),
@@ -271,19 +436,19 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildTaskCard('Assigned', '18', Colors.blue.shade700, onTap: () {
+                Expanded(child: _buildTaskCard('Assigned', todayAssigned.toString(), Colors.blue.shade700, onTap: () {
                   if (widget.onNavigateToTab != null) widget.onNavigateToTab!(1);
                 })),
                 const SizedBox(width: 8),
-                Expanded(child: _buildTaskCard('Meetings', '2', Colors.purple.shade700, onTap: () {
+                Expanded(child: _buildTaskCard('Meetings', meetingsCount.toString(), Colors.purple.shade700, onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const MandalMeetingsScreen()));
                 })),
                 const SizedBox(width: 8),
-                Expanded(child: _buildTaskCard('Reviews', '4', Colors.amber.shade800, onTap: () {
+                Expanded(child: _buildTaskCard('Reviews', reviewsCount.toString(), Colors.amber.shade800, onTap: () {
                   if (widget.onNavigateToTab != null) widget.onNavigateToTab!(2);
                 })),
                 const SizedBox(width: 8),
-                Expanded(child: _buildTaskCard('Due Today', '6', Colors.red.shade700, onTap: () {
+                Expanded(child: _buildTaskCard('Due Today', dueToday.toString(), Colors.red.shade700, onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const MandalSLATrackerScreen()));
                 })),
               ],
@@ -297,17 +462,36 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildPriorityFilterChip(0, 'High (5)', Colors.red),
+                _buildPriorityFilterChip(0, 'High (${highPriorityList.length})', Colors.red),
                 const SizedBox(width: 8),
-                _buildPriorityFilterChip(1, 'Medium (7)', Colors.orange),
+                _buildPriorityFilterChip(1, 'Medium (${medPriorityList.length})', Colors.orange),
                 const SizedBox(width: 8),
-                _buildPriorityFilterChip(2, 'Low (10)', Colors.green),
+                _buildPriorityFilterChip(2, 'Low (${lowPriorityList.length})', Colors.green),
               ],
             ),
             const SizedBox(height: 12),
-            _buildPriorityItemCard(context, title: 'Water Supply Issue', location: 'Ward 12, Bhupalapatnam', priority: 'High', timeAgo: '1h ago', color: Colors.red),
-            _buildPriorityItemCard(context, title: 'Drainage Blocked', location: 'Ward 6, Bhupalapatnam', priority: 'Medium', timeAgo: '3h ago', color: Colors.orange),
-            _buildPriorityItemCard(context, title: 'Road Repair Needed', location: 'Ward 3, Bhupalapatnam', priority: 'Low', timeAgo: '5h ago', color: Colors.green),
+            if (activePriorityList.isNotEmpty)
+              ...activePriorityList.take(3).map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: _buildPriorityItemCard(
+                      context,
+                      title: item.category,
+                      location: '${item.wardName ?? "Ward"}, ${item.villageName ?? "Village"}',
+                      priority: item.priority.name.toUpperCase(),
+                      timeAgo: '${DateTime.now().difference(item.createdAt).inHours}h ago',
+                      color: item.priority == ComplaintPriority.high
+                          ? Colors.red
+                          : (item.priority == ComplaintPriority.medium ? Colors.orange : Colors.green),
+                    ),
+                  ))
+            else
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: const Center(
+                  child: Text('No active complaints in this priority queue.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                ),
+              ),
             const SizedBox(height: 24),
           ],
         ),
@@ -329,20 +513,38 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
     );
   }
 
-  Widget _buildStatBox(String label, String value, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.grey.shade700), textAlign: TextAlign.center),
-        ],
+  Widget _buildStatBox(String label, String value, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -359,9 +561,18 @@ class _MandalDashboardHomeTabState extends State<MandalDashboardHomeTab> {
         ),
         child: Column(
           children: [
-            Text(count, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(count, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+            ),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -429,30 +640,64 @@ class MandalComplaintsTab extends StatefulWidget {
 }
 
 class _MandalComplaintsTabState extends State<MandalComplaintsTab> {
-  int _selectedFilter = 0; // All (256), New (26), In Progress (78), Resolved (142)
-
-  final List<Map<String, dynamic>> _mockComplaints = [
-    {'title': 'Water Supply Issue', 'location': 'Ward 12, Bhupalapatnam', 'id': '#CMP-248', 'date': '16 Jul 2026', 'priority': 'High', 'status': 'In Progress', 'color': Colors.orange, 'icon': Icons.water_drop},
-    {'title': 'Drainage Blocked', 'location': 'Ward 6, Bhupalapatnam', 'id': '#CMP-246', 'date': '15 Jul 2026', 'priority': 'Medium', 'status': 'Pending', 'color': Colors.red, 'icon': Icons.opacity},
-    {'title': 'Street Light Not Working', 'location': 'Ward 8, Bhupalapatnam', 'id': '#CMP-244', 'date': '15 Jul 2026', 'priority': 'Low', 'status': 'In Progress', 'color': Colors.orange, 'icon': Icons.lightbulb_outline},
-    {'title': 'Garbage Not Cleared', 'location': 'Ward 5, Bhupalapatnam', 'id': '#CMP-242', 'date': '14 Jul 2026', 'priority': 'Medium', 'status': 'Pending', 'color': Colors.red, 'icon': Icons.delete_outline},
-    {'title': 'Road Repair Needed', 'location': 'Ward 3, Bhupalapatnam', 'id': '#CMP-241', 'date': '13 Jul 2026', 'priority': 'High', 'status': 'Resolved', 'color': Colors.green, 'icon': Icons.add_road},
-    {'title': 'Overflowing Waste Bin', 'location': 'Ward 2, Bhupalapatnam', 'id': '#CMP-239', 'date': '12 Jul 2026', 'priority': 'Low', 'status': 'In Review', 'color': Colors.purple, 'icon': Icons.restore_from_trash},
-  ];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final user = appState.currentUser;
+    final allComplaints = appState.complaintsForMandalOfficer(user);
+
+    final totalCount = allComplaints.length;
+    final newCount = allComplaints.where((c) => c.status == ComplaintStatus.submitted).length;
+    final inProgressCount = allComplaints.where((c) => c.status == ComplaintStatus.inProgress).length;
+    final resolvedCount = allComplaints.where((c) => c.status == ComplaintStatus.resolved).length;
+    final escalatedCount = allComplaints.where((c) => c.isPushed || DateTime.now().difference(c.createdAt).inHours >= 24).length;
+    final slaBreachedCount = allComplaints.where((c) => c.status != ComplaintStatus.resolved && DateTime.now().difference(c.createdAt).inHours >= 24).length;
+    final pendingCount = allComplaints.where((c) => c.status == ComplaintStatus.submitted).length;
+    final rejectedCount = allComplaints.where((c) => c.status == ComplaintStatus.rejected).length;
+
+    final activeFilter = appState.mandalOfficerActiveFilter;
+    var filtered = allComplaints;
+
+    if (activeFilter == 'New') {
+      filtered = filtered.where((c) => c.status == ComplaintStatus.submitted).toList();
+    } else if (activeFilter == 'In Progress') {
+      filtered = filtered.where((c) => c.status == ComplaintStatus.inProgress).toList();
+    } else if (activeFilter == 'Resolved') {
+      filtered = filtered.where((c) => c.status == ComplaintStatus.resolved).toList();
+    } else if (activeFilter == 'Escalated') {
+      filtered = filtered.where((c) => c.isPushed || DateTime.now().difference(c.createdAt).inHours >= 24).toList();
+    } else if (activeFilter == 'SLA Breached') {
+      filtered = filtered.where((c) => c.status != ComplaintStatus.resolved && DateTime.now().difference(c.createdAt).inHours >= 24).toList();
+    } else if (activeFilter == 'Pending') {
+      filtered = filtered.where((c) => c.status == ComplaintStatus.submitted).toList();
+    } else if (activeFilter == 'Rejected') {
+      filtered = filtered.where((c) => c.status == ComplaintStatus.rejected).toList();
+    }
+
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      filtered = filtered.where((c) {
+        return c.id.toLowerCase().contains(query) ||
+            c.category.toLowerCase().contains(query) ||
+            c.description.toLowerCase().contains(query) ||
+            c.wardName.toLowerCase().contains(query);
+      }).toList();
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Complaints', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        title: const Text('Mandal Complaints', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0.5,
-        leading: const BackButton(color: Colors.black87),
-        actions: [
-          IconButton(icon: const Icon(Icons.search, color: Colors.black87), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.tune, color: Colors.black87), onPressed: () {}),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () {
+            appState.setMandalOfficerTabIndex(0);
+          },
+        ),
       ),
       body: Column(
         children: [
@@ -463,13 +708,21 @@ class _MandalComplaintsTabState extends State<MandalComplaintsTab> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildFilterTab(0, 'All (256)'),
+                  _buildFilterTab(appState, 'All', 'All ($totalCount)'),
                   const SizedBox(width: 8),
-                  _buildFilterTab(1, 'New (26)'),
+                  _buildFilterTab(appState, 'New', 'New ($newCount)'),
                   const SizedBox(width: 8),
-                  _buildFilterTab(2, 'In Progress (78)'),
+                  _buildFilterTab(appState, 'In Progress', 'In Progress ($inProgressCount)'),
                   const SizedBox(width: 8),
-                  _buildFilterTab(3, 'Resolved (142)'),
+                  _buildFilterTab(appState, 'Resolved', 'Resolved ($resolvedCount)'),
+                  const SizedBox(width: 8),
+                  _buildFilterTab(appState, 'Escalated', 'Escalated ($escalatedCount)'),
+                  const SizedBox(width: 8),
+                  _buildFilterTab(appState, 'SLA Breached', 'SLA Breached ($slaBreachedCount)'),
+                  const SizedBox(width: 8),
+                  _buildFilterTab(appState, 'Pending', 'Pending ($pendingCount)'),
+                  const SizedBox(width: 8),
+                  _buildFilterTab(appState, 'Rejected', 'Rejected ($rejectedCount)'),
                 ],
               ),
             ),
@@ -477,8 +730,10 @@ class _MandalComplaintsTabState extends State<MandalComplaintsTab> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Search by ID, keyword or location',
+                hintText: 'Search by ID, category or location',
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 filled: true,
                 fillColor: Colors.white,
@@ -489,66 +744,69 @@ class _MandalComplaintsTabState extends State<MandalComplaintsTab> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _mockComplaints.length,
-              itemBuilder: (context, index) {
-                final c = _mockComplaints[index];
-                return Card(
-                  elevation: 1,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const MandalComplaintDetailsScreen()));
-                    },
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(10)),
-                      child: Icon(c['icon'] as IconData, color: Colors.blue.shade700, size: 24),
-                    ),
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: Text(c['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: (c['color'] as Color).withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
-                          child: Text(c['status'], style: TextStyle(color: c['color'] as Color, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(c['location'], style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('${c['id']}  •  ${c['date']}', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-                            Text(c['priority'], style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: c['priority'] == 'High' ? Colors.red : Colors.orange)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+            child: filtered.isEmpty
+                ? const Center(child: Text('No complaints found.', style: TextStyle(color: Colors.grey)))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final c = filtered[index];
+                      Color badgeColor = Colors.orange;
+                      if (c.status == ComplaintStatus.resolved) badgeColor = Colors.green;
+                      if (c.status == ComplaintStatus.inProgress) badgeColor = Colors.blue;
 
+                      return Card(
+                        elevation: 1,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(12),
+                          onTap: () => ComplaintDetailsModal.show(context, c, appState.isTelugu),
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: badgeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                            child: Icon(Icons.assignment_outlined, color: badgeColor, size: 24),
+                          ),
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text(c.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: badgeColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+                                child: Text(c.status.name.toUpperCase(), style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text('${c.wardName}, ${c.villageName}', style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('ID: ${c.id.length > 8 ? c.id.substring(0, 8).toUpperCase() : c.id}', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                                  Text(c.priority.name.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: c.priority == ComplaintPriority.high ? Colors.red : Colors.orange)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterTab(int index, String label) {
-    final isSelected = _selectedFilter == index;
+  Widget _buildFilterTab(AppState appState, String filter, String label) {
+    final isSelected = appState.mandalOfficerActiveFilter == filter;
     return GestureDetector(
-      onTap: () => setState(() => _selectedFilter = index),
+      onTap: () => appState.setMandalOfficerActiveFilter(filter),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -684,10 +942,6 @@ class MandalComplaintDetailsScreen extends StatelessWidget {
                 leading: const CircleAvatar(child: Icon(Icons.person)),
                 title: const Text('S. Prakash', style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text('Assistant Engineer'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.phone, color: Colors.green),
-                  onPressed: () => OfficerInteractiveDialogs.showCallCitizenDialog(context, themeConfig),
-                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -975,7 +1229,15 @@ class MandalReportsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
     final themeConfig = Provider.of<ThemeProvider>(context).activeParty;
+    final user = appState.currentUser;
+    final complaints = appState.complaintsForMandalOfficer(user);
+
+    final total = complaints.length;
+    final resolved = complaints.where((c) => c.status == ComplaintStatus.resolved).length;
+    final pending = complaints.where((c) => c.status == ComplaintStatus.submitted).length;
+    final inProgress = complaints.where((c) => c.status == ComplaintStatus.inProgress).length;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -983,94 +1245,48 @@ class MandalReportsTab extends StatelessWidget {
         title: const Text('Reports & Analytics', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0.5,
-        leading: const BackButton(color: Colors.black87),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () {
+            appState.setMandalOfficerTabIndex(0);
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)),
-              child: Row(
-                children: const [
-                  Icon(Icons.calendar_month, color: Colors.grey, size: 20),
-                  SizedBox(width: 10),
-                  Text('This Month (Jul 2026)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  Spacer(),
-                  Icon(Icons.arrow_drop_down, color: Colors.grey),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+
 
             const Text('Overview', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _buildOverviewBox('Total', '256', Colors.blue.shade700)),
+                Expanded(child: _buildOverviewBox('Total', total.toString(), Colors.blue.shade700)),
                 const SizedBox(width: 8),
-                Expanded(child: _buildOverviewBox('Resolved', '142', Colors.green)),
+                Expanded(child: _buildOverviewBox('Resolved', resolved.toString(), Colors.green)),
                 const SizedBox(width: 8),
-                Expanded(child: _buildOverviewBox('Pending', '36', Colors.amber.shade800)),
+                Expanded(child: _buildOverviewBox('Pending', pending.toString(), Colors.amber.shade800)),
                 const SizedBox(width: 8),
-                Expanded(child: _buildOverviewBox('In Progress', '78', Colors.purple)),
+                Expanded(child: _buildOverviewBox('In Progress', inProgress.toString(), Colors.purple)),
               ],
             ),
             const SizedBox(height: 20),
 
-            // Complaint Trend Line Chart
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Complaint Trend', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                GestureDetector(onTap: () {}, child: const Text('View Report', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12))),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  height: 160,
-                  child: LineChart(
-                    LineChartData(
-                      gridData: const FlGridData(show: false),
-                      titlesData: const FlTitlesData(show: false),
-                      borderData: FlBorderData(show: false),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: const [FlSpot(1, 10), FlSpot(7, 35), FlSpot(14, 25), FlSpot(21, 45), FlSpot(28, 68), FlSpot(31, 60)],
-                          isCurved: true,
-                          color: Colors.green,
-                          barWidth: 3,
-                          isStrokeCapRound: true,
-                          dotData: const FlDotData(show: true),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
+            // Category Wise Complaints Progress Bars
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Category Wise Complaints', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                GestureDetector(onTap: () {}, child: const Text('View All', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12))),
+                Text('Live Data', style: TextStyle(color: themeConfig.primaryColor, fontWeight: FontWeight.bold, fontSize: 12)),
               ],
             ),
             const SizedBox(height: 10),
-            _buildCategoryProgressBar('Water Supply', 96, 0.375, Colors.blue),
-            _buildCategoryProgressBar('Drainage', 58, 0.227, Colors.purple),
-            _buildCategoryProgressBar('Street Light', 35, 0.137, Colors.amber),
-            _buildCategoryProgressBar('Roads', 32, 0.125, Colors.red),
-            _buildCategoryProgressBar('Garbage', 28, 0.109, Colors.green),
+            if (complaints.isEmpty)
+              const Center(child: Text('No complaints recorded in database.', style: TextStyle(color: Colors.grey)))
+            else
+              ..._buildDynamicCategoryBars(complaints),
 
             const SizedBox(height: 30),
             SizedBox(
@@ -1094,6 +1310,20 @@ class MandalReportsTab extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildDynamicCategoryBars(List<Complaint> complaints) {
+    final Map<String, int> counts = {};
+    for (var c in complaints) {
+      counts[c.category] = (counts[c.category] ?? 0) + 1;
+    }
+    final total = complaints.length;
+    final List<Widget> bars = [];
+    counts.forEach((cat, count) {
+      final ratio = total > 0 ? count / total : 0.0;
+      bars.add(_buildCategoryProgressBar(cat, count, ratio, Colors.blue.shade700));
+    });
+    return bars;
   }
 
   Widget _buildOverviewBox(String label, String value, Color color) {
@@ -1276,10 +1506,6 @@ class MandalAssignedOfficersScreen extends StatelessWidget {
                         Text(o['role']!, style: const TextStyle(fontSize: 11, color: Colors.black54)),
                         Text('Assigned: ${o['assigned']}', style: TextStyle(fontSize: 10, color: themeConfig.primaryColor, fontWeight: FontWeight.bold)),
                       ],
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.phone, color: Colors.green),
-                      onPressed: () => OfficerInteractiveDialogs.showCallCitizenDialog(context, themeConfig),
                     ),
                   ),
                 );
@@ -1548,14 +1774,83 @@ class MandalBroadcastCenterScreen extends StatelessWidget {
 // -----------------------------------------------------------------------------
 // 10. PROFILE TAB
 // -----------------------------------------------------------------------------
-class MandalProfileTab extends StatelessWidget {
+class MandalProfileTab extends StatefulWidget {
   final VoidCallback? onProfileSaved;
   const MandalProfileTab({super.key, this.onProfileSaved});
+
+  @override
+  State<MandalProfileTab> createState() => _MandalProfileTabState();
+}
+
+class _MandalProfileTabState extends State<MandalProfileTab> {
+  final ImagePicker _picker = ImagePicker();
+  bool _isSaving = false;
+
+  void _showInfoDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CLOSE', style: TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final userId = appState.currentUser?.id ?? 'user';
+    final name = appState.currentUser?.name ?? '';
+    final phone = appState.currentUser?.phoneNumber ?? '';
+
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (pickedFile != null) {
+        appState.updateProfilePhotoLocally(pickedFile.path);
+        String finalPath = pickedFile.path;
+        Uint8List? bytes;
+        
+        if (kIsWeb) {
+          bytes = await pickedFile.readAsBytes();
+        } else {
+          final appDir = await getApplicationDocumentsDirectory();
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final destPath = '${appDir.path}/profile_${userId}_$timestamp.jpg';
+          final destFile = await File(pickedFile.path).copy(destPath);
+          finalPath = destFile.path;
+        }
+        
+        setState(() => _isSaving = true);
+        await appState.updateUserProfile(name, phone, finalPath, profilePhotoBytes: bytes);
+        if (mounted) {
+          setState(() => _isSaving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile picture updated successfully!'), backgroundColor: Color(0xFF0F766E)),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking profile image: $e');
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update profile: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final user = appState.currentUser;
+    final mandalName = user?.mandalName ?? 'Bhupalapatnam Mandal';
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -1563,7 +1858,12 @@ class MandalProfileTab extends StatelessWidget {
         title: const Text('Profile', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0.5,
-        leading: const BackButton(color: Colors.black87),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () {
+            appState.setMandalOfficerTabIndex(0);
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -1576,10 +1876,40 @@ class MandalProfileTab extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.green.shade100,
-                      child: const Icon(Icons.person, size: 36, color: Colors.green),
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.green.shade100,
+                          backgroundImage: user != null && user.profilePhotoUrl != null && user.profilePhotoUrl!.isNotEmpty
+                              ? (user.profilePhotoUrl!.startsWith('http') || kIsWeb
+                                  ? NetworkImage(user.profilePhotoUrl!) as ImageProvider
+                                  : FileImage(File(user.profilePhotoUrl!)))
+                              : null,
+                          child: (user == null || user.profilePhotoUrl == null || user.profilePhotoUrl!.isEmpty)
+                              ? const Icon(Icons.person, size: 36, color: Colors.green)
+                              : null,
+                        ),
+                        if (_isSaving)
+                          const Positioned.fill(
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F766E)),
+                          ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0F766E),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -1588,13 +1918,18 @@ class MandalProfileTab extends StatelessWidget {
                         children: [
                           Text(user?.name ?? 'Ramesh Kumar', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 2),
-                          const Text('Mandal Officer', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                          const Text('Mandal Administrative Officer', style: TextStyle(fontSize: 12, color: Colors.black54)),
                           const SizedBox(height: 2),
-                          const Text('Bhupalapatnam Mandal', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          Text(mandalName, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                         ],
                       ),
                     ),
-                    IconButton(icon: const Icon(Icons.edit_outlined, color: Colors.grey), onPressed: () {}),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: Colors.grey), 
+                      onPressed: () {
+                        _showInfoDialog(context, 'Edit Profile', 'Please contact Secretariat HR or Mandal Admin to update your official profile information.');
+                      }
+                    ),
                   ],
                 ),
               ),
@@ -1606,17 +1941,53 @@ class MandalProfileTab extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Column(
                 children: [
-                  _buildProfileTile(Icons.person_outline, 'My Profile', () {}),
+                  _buildProfileTile(Icons.person_outline, 'My Profile', () {
+                    _showInfoDialog(context, 'My Profile', 'Name: ${user?.name ?? ""}\nRole: Mandal Administrative Officer\nMandal: ${user?.mandalName ?? ""}\nPhone: ${user?.phoneNumber ?? ""}\nID: ${user?.id ?? ""}');
+                  }),
                   const Divider(height: 1),
-                  _buildProfileTile(Icons.lock_outline, 'Change Password', () {}),
+                  _buildProfileTile(Icons.lock_outline, 'Change Password', () {
+                    _showInfoDialog(context, 'Change Password', 'Password change instructions have been sent to your official mobile number: ${user?.phoneNumber ?? ""}.');
+                  }),
                   const Divider(height: 1),
-                  _buildProfileTile(Icons.notifications_none, 'Notification Settings', () {}),
+                  _buildProfileTile(Icons.notifications_none, 'Notification Settings', () {
+                    _showInfoDialog(context, 'Notification Settings', 'Urgent complaint push notifications and WhatsApp alerts are active.');
+                  }),
                   const Divider(height: 1),
-                  _buildProfileTile(Icons.language, 'Language', () {}, trailingText: 'English >'),
+                  _buildProfileTile(Icons.language, 'Language', () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Select Language', style: TextStyle(fontWeight: FontWeight.bold)),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              title: const Text('English'),
+                              onTap: () {
+                                appState.setLanguage(false);
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                            ListTile(
+                              title: const Text('తెలుగు (Telugu)'),
+                              onTap: () {
+                                appState.setLanguage(true);
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }, trailingText: appState.isTelugu ? 'తెలుగు >' : 'English >'),
                   const Divider(height: 1),
-                  _buildProfileTile(Icons.help_outline, 'Help & Support', () {}),
+                  _buildProfileTile(Icons.help_outline, 'Help & Support', () {
+                    _showInfoDialog(context, 'Help & Support', 'For technical assistance, please email admin-support@smartgov.gov.in or raise a ticket on the Secretariat portal.');
+                  }),
                   const Divider(height: 1),
-                  _buildProfileTile(Icons.info_outline, 'About Us', () {}),
+                  _buildProfileTile(Icons.info_outline, 'About Us', () {
+                    _showInfoDialog(context, 'About Us', 'Smart Governance App v2.4.0\nSecure Category Officer & Mandal Officer dashboard module.');
+                  }),
                 ],
               ),
             ),
@@ -1628,9 +1999,15 @@ class MandalProfileTab extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                onTap: () => appState.logout(),
+                onTap: () async {
+                  await appState.logout();
+                  if (context.mounted) {
+                    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+                  }
+                },
               ),
             ),
+            const SizedBox(height: 120),
           ],
         ),
       ),

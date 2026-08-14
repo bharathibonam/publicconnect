@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/app_state.dart';
 import '../../themes/theme_provider.dart';
+import '../../models/user.dart';
+import '../../models/work_update.dart';
+import '../../models/completed_work.dart';
 import '../ward_admin/completed_work_details_screen.dart';
 
 class MyWardScreen extends StatelessWidget {
@@ -49,7 +52,17 @@ class MyWardScreen extends StatelessWidget {
       );
     }
 
-    final updates = appState.wardUpdatesForCitizen(user.wardId ?? '', user.wardName).toList();
+    final List<WorkUpdate> updates;
+    final List<CompletedWork> completedWorks;
+
+    if (user.role == UserRole.superAdmin || user.role == UserRole.mandalOfficer || user.role == UserRole.categoryOfficer) {
+      updates = appState.workUpdates.toList();
+      completedWorks = appState.completedWorks.toList();
+    } else {
+      updates = appState.wardUpdatesForCitizen(user.wardId ?? '', user.wardName).toList();
+      completedWorks = appState.completedWorksForCitizen(user.id).toList();
+    }
+
     if (initialUpdateId != null) {
       final index = updates.indexWhere((u) => u.id == initialUpdateId);
       if (index != -1) {
@@ -57,8 +70,6 @@ class MyWardScreen extends StatelessWidget {
         updates.insert(0, item);
       }
     }
-
-    final completedWorks = appState.completedWorksForCitizen(user.id);
 
     return DefaultTabController(
       length: 2,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -17,9 +18,11 @@ import '../models/work_update.dart';
 import '../models/completed_work.dart';
 import '../models/app_config.dart';
 import '../models/meeting.dart';
+import '../models/mla_broadcast.dart';
 import '../utils/category_mapping.dart';
 import '../utils/mandal_mapping.dart';
 import 'supabase_service.dart';
+import 'translation_service.dart';
 
 enum ConnectionStatus { checking, connected, offline }
 
@@ -53,6 +56,12 @@ class AppState extends ChangeNotifier {
   bool _isTelugu = false;
   bool get isTelugu => _isTelugu;
 
+  void toggleLanguage() {
+    setLanguage(!_isTelugu);
+  }
+
+
+
   // ─── Work Updates ───────────────────────────────────────────────────────────
   List<WorkUpdate> _workUpdates = [];
   List<WorkUpdate> get workUpdates => _workUpdates;
@@ -62,9 +71,113 @@ class AppState extends ChangeNotifier {
   int? _requestedCitizenTabIndex;
   int? get requestedCitizenTabIndex => _requestedCitizenTabIndex;
 
+  String _citizenActiveFilter = 'all';
+  String get citizenActiveFilter => _citizenActiveFilter;
+
+  void setCitizenActiveFilter(String filter) {
+    _citizenActiveFilter = filter;
+    notifyListeners();
+  }
+
   void setCitizenTabIndex(int index) {
     _requestedCitizenTabIndex = index;
     notifyListeners();
+  }
+
+  int? _requestedSuperAdminTabIndex;
+  int? get requestedSuperAdminTabIndex => _requestedSuperAdminTabIndex;
+  
+  String _superAdminActiveFilter = 'all';
+  String get superAdminActiveFilter => _superAdminActiveFilter;
+
+  void setSuperAdminTabIndex(int index, {String filter = 'all'}) {
+    _requestedSuperAdminTabIndex = index;
+    _superAdminActiveFilter = filter;
+    notifyListeners();
+  }
+
+  void setSuperAdminActiveFilter(String filter) {
+    _superAdminActiveFilter = filter;
+    notifyListeners();
+  }
+
+  int? _requestedWardAdminTabIndex;
+  int? get requestedWardAdminTabIndex => _requestedWardAdminTabIndex;
+  
+  String _wardAdminActiveFilter = 'All';
+  String get wardAdminActiveFilter => _wardAdminActiveFilter;
+
+  void setWardAdminTabIndex(int index, {String filter = 'All'}) {
+    _requestedWardAdminTabIndex = index;
+    _wardAdminActiveFilter = filter;
+    notifyListeners();
+  }
+
+  void setWardAdminActiveFilter(String filter) {
+    _wardAdminActiveFilter = filter;
+    notifyListeners();
+  }
+
+  void clearWardAdminTabIndex() {
+    if (_requestedWardAdminTabIndex != null) {
+      _requestedWardAdminTabIndex = null;
+      notifyListeners();
+    }
+  }
+
+  int? _requestedCategoryOfficerTabIndex;
+  int? get requestedCategoryOfficerTabIndex => _requestedCategoryOfficerTabIndex;
+  
+  String _categoryOfficerActiveFilter = 'All';
+  String get categoryOfficerActiveFilter => _categoryOfficerActiveFilter;
+
+  void setCategoryOfficerTabIndex(int index, {String filter = 'All'}) {
+    _requestedCategoryOfficerTabIndex = index;
+    _categoryOfficerActiveFilter = filter;
+    notifyListeners();
+  }
+
+  void setCategoryOfficerActiveFilter(String filter) {
+    _categoryOfficerActiveFilter = filter;
+    notifyListeners();
+  }
+
+  void clearCategoryOfficerTabIndex() {
+    if (_requestedCategoryOfficerTabIndex != null) {
+      _requestedCategoryOfficerTabIndex = null;
+      notifyListeners();
+    }
+  }
+
+  int? _requestedMandalOfficerTabIndex;
+  int? get requestedMandalOfficerTabIndex => _requestedMandalOfficerTabIndex;
+  
+  String _mandalOfficerActiveFilter = 'All';
+  String get mandalOfficerActiveFilter => _mandalOfficerActiveFilter;
+
+  void setMandalOfficerTabIndex(int index, {String filter = 'All'}) {
+    _requestedMandalOfficerTabIndex = index;
+    _mandalOfficerActiveFilter = filter;
+    notifyListeners();
+  }
+
+  void setMandalOfficerActiveFilter(String filter) {
+    _mandalOfficerActiveFilter = filter;
+    notifyListeners();
+  }
+
+  void clearMandalOfficerTabIndex() {
+    if (_requestedMandalOfficerTabIndex != null) {
+      _requestedMandalOfficerTabIndex = null;
+      notifyListeners();
+    }
+  }
+
+  void clearSuperAdminTabIndex() {
+    if (_requestedSuperAdminTabIndex != null) {
+      _requestedSuperAdminTabIndex = null;
+      notifyListeners();
+    }
   }
 
   String? _highlightedComplaintId;
@@ -92,7 +205,10 @@ class AppState extends ChangeNotifier {
   List<Meeting> _meetings = [];
   AppConfig? _appConfig;
 
+  List<MLABroadcast> _mlaBroadcasts = [];
   User? _currentUser;
+
+  List<MLABroadcast> get mlaBroadcasts => _mlaBroadcasts;
 
   List<Ward> get wards => List.unmodifiable(_wards);
 
@@ -257,18 +373,64 @@ class AppState extends ChangeNotifier {
   StreamSubscription? _completedWorksSub;
   StreamSubscription<List<AppNotification>>? _notificationsSub;
   StreamSubscription<List<Meeting>>? _meetingsSub;
+  RealtimeChannel? _mlaBroadcastsChannel;
 
   AppState() {
     _init();
+    Timer.periodic(const Duration(minutes: 1), (timer) {
+      checkAndExecuteAutoEscalations();
+      checkScheduledBroadcasts();
+    });
+  }
+
+  Set<String> _acknowledgedPopupIds = {};
+
+  void _loadAcknowledgedPopups() {
+    final settingsBox = Hive.box('app_settings');
+    final list = settingsBox.get('acknowledged_popups', defaultValue: <String>[]);
+    if (list is List) {
+      _acknowledgedPopupIds = list.map((e) => e.toString()).toSet();
+    }
+  }
+
+  bool isCurrentAssignee(User user, Complaint c) {
+    if (user.role == UserRole.citizen) return false;
+    if (c.status == ComplaintStatus.resolved || c.status == ComplaintStatus.rejected) {
+      return false;
+    }
+    return true;
+  }
+
+  Complaint? getPendingEscalationPopup(User user) {
+    if (user.role == UserRole.citizen) return null;
+    for (final c in _complaints) {
+      if (c.status == ComplaintStatus.resolved || c.status == ComplaintStatus.rejected) continue;
+      if (c.isPushed && !_acknowledgedPopupIds.contains(c.id)) {
+        if (isCurrentAssignee(user, c)) {
+          return c;
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<void> acknowledgeEscalationPopup(String complaintId) async {
+    _acknowledgedPopupIds.add(complaintId);
+    final settingsBox = Hive.box('app_settings');
+    await settingsBox.put('acknowledged_popups', _acknowledgedPopupIds.toList());
+    notifyListeners();
   }
 
   Future<void> _init() async {
     // 1. Initialize local cache boxes
     final settingsBox = Hive.box('app_settings');
     _isTelugu = settingsBox.get('isTelugu', defaultValue: false) as bool;
+    Trans.isTelugu = _isTelugu;
+    _loadAcknowledgedPopups();
 
     // Load cached broadcasts
     _loadLocalBroadcasts();
+    _loadLocalMLABroadcasts();
 
     // 2. Load cached app config
     final cachedConfig = settingsBox.get('app_config');
@@ -298,6 +460,7 @@ class AppState extends ChangeNotifier {
       await syncOfflineProfilePhotos();
       await syncOfflineComplaints();
       await syncOfflineBroadcasts();
+      await fetchMLABroadcastsFromSupabase();
     }
 
     // 5. Setup dynamic network monitoring
@@ -325,6 +488,7 @@ class AppState extends ChangeNotifier {
       await syncOfflineProfilePhotos();
       await syncOfflineComplaints();
       await syncOfflineBroadcasts();
+      await fetchMLABroadcastsFromSupabase();
     }
   }
 
@@ -336,6 +500,7 @@ class AppState extends ChangeNotifier {
   // ─── Bilingual Language Switch ──────────────────────────────────────────────
   void setLanguage(bool toTelugu) {
     _isTelugu = toTelugu;
+    Trans.isTelugu = toTelugu;
     Hive.box('app_settings').put('isTelugu', toTelugu);
     notifyListeners();
   }
@@ -445,7 +610,7 @@ class AppState extends ChangeNotifier {
   Future<void> _fetchAppConfig({String? forcePartyId}) async {
     final box = await Hive.openBox('theme_settings');
     final activePartyId =
-        forcePartyId ?? box.get('active_party_id', defaultValue: 'tdp');
+        forcePartyId ?? box.get('active_party_id', defaultValue: 'bjp');
 
     final config = await SupabaseService.getAppConfig(activePartyId);
     if (config != null) {
@@ -523,6 +688,7 @@ class AppState extends ChangeNotifier {
       (newComplaints) {
         _checkAndNotifyResolved(newComplaints);
         _complaints = newComplaints;
+        checkAndExecuteAutoEscalations();
         notifyListeners();
       },
       onError: (e) {
@@ -583,6 +749,25 @@ class AppState extends ChangeNotifier {
       _completedWorks = data;
       notifyListeners();
     }, onError: (_) {});
+
+    // ─── Supabase Realtime: MLA Broadcasts live updates ───
+    if (isSupabaseConnected) {
+      try {
+        _mlaBroadcastsChannel?.unsubscribe();
+        _mlaBroadcastsChannel = Supabase.instance.client.channel('public:mla_broadcasts').onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'mla_broadcasts',
+          callback: (payload) {
+            debugPrint('[REALTIME] mla_broadcasts changed payload: $payload');
+            fetchMLABroadcastsFromSupabase();
+          },
+        );
+        _mlaBroadcastsChannel!.subscribe();
+      } catch (e) {
+        debugPrint('Error setting up mla_broadcasts realtime channel: $e');
+      }
+    }
 
     // ─── Supabase Realtime: Notifications for current user ───
     if (_currentUser != null) {
@@ -656,71 +841,275 @@ class AppState extends ChangeNotifier {
     }).toList();
   }
 
+  // ─── Role-Based Complaint Getters ──────────────────────────────────────────
+  List<Complaint> complaintsForCategoryOfficer(User? user) {
+    if (user == null) return _complaints;
+    final rawRole = user.officerRole ?? '';
+    final userRoleCat = CategoryMapping.getCanonicalCategory(rawRole);
+    
+    return _complaints.where((c) {
+      if (c.assignedOfficerId == user.id) return true;
+      if (userRoleCat.isNotEmpty && userRoleCat != 'Category Officer' && userRoleCat != 'categoryOfficer') {
+        final complaintCat = CategoryMapping.getCanonicalCategory(c.category);
+        if (complaintCat == userRoleCat) return true;
+      }
+      if (c.pushedTo == 'categoryOfficer') return true;
+      // If user has no specific role set or generic Category Officer role, return true
+      return rawRole.isEmpty || rawRole == 'Category Officer' || rawRole == 'categoryOfficer';
+    }).toList();
+  }
+
+  List<Complaint> complaintsForWardOfficer(User? user) {
+    if (user == null) return _complaints;
+    final userWardName = user.wardName?.trim().toLowerCase() ?? '';
+    final userWardId = user.wardId?.trim().toLowerCase() ?? '';
+    
+    if (userWardName.isEmpty && userWardId.isEmpty) return _complaints;
+
+    String extractNumber(String str) {
+      return str.replaceAll(RegExp(r'[^0-9]'), '');
+    }
+
+    final uWardNum = extractNumber(userWardId.isNotEmpty ? userWardId : userWardName);
+
+    return _complaints.where((c) {
+      final cWardName = c.wardName.trim().toLowerCase();
+      final cWardId = c.wardId.trim().toLowerCase();
+
+      if (userWardName.isNotEmpty && cWardName == userWardName) return true;
+      if (userWardId.isNotEmpty && cWardId == userWardId) return true;
+
+      final cWardNum = extractNumber(cWardId.isNotEmpty ? cWardId : cWardName);
+      if (uWardNum.isNotEmpty && cWardNum.isNotEmpty && uWardNum == cWardNum) return true;
+
+      if (c.pushedTo == 'wardAdmin' || c.pushedTo == 'wardOfficer') return true;
+      return false;
+    }).toList();
+  }
+
+  List<Complaint> complaintsForMandalOfficer(User? user) {
+    if (user == null) return _complaints;
+    final userMandal = user.mandalName?.trim().toLowerCase() ?? '';
+    if (userMandal.isEmpty || userMandal == 'all') return _complaints;
+
+    return _complaints.where((c) {
+      final cMandal = c.mandalName.trim().toLowerCase();
+      if (cMandal.isEmpty || cMandal == userMandal) return true;
+      if (userMandal.contains(cMandal) || cMandal.contains(userMandal)) return true;
+      if (c.pushedTo == 'mandalOfficer') return true;
+      return false;
+    }).toList();
+  }
+
+  List<Complaint> complaintsForSuperAdmin([User? user]) {
+    return _complaints;
+  }
+
+  // ─── Automatic 24-Hour Escalation Pipeline ───────────────────────────────
+  void checkAndExecuteAutoEscalations() {
+    final now = DateTime.now();
+    for (final c in _complaints) {
+      if (c.status == ComplaintStatus.resolved ||
+          c.status == ComplaintStatus.rejected) {
+        continue;
+      }
+      final hours = now.difference(c.createdAt).inHours;
+      if (hours >= 36 && c.pushedTo != 'superAdmin') {
+        escalateComplaint(c.id, 'superAdmin');
+      } else if (hours >= 24 &&
+          c.pushedTo != 'mandalOfficer' &&
+          c.pushedTo != 'superAdmin') {
+        escalateComplaint(c.id, 'mandalOfficer');
+      } else if (hours >= 12 &&
+          (c.pushedTo == null ||
+              c.pushedTo == '' ||
+              c.pushedTo == 'categoryOfficer')) {
+        escalateComplaint(c.id, 'wardAdmin');
+      }
+    }
+  }
+  // ─── Escalation Handler ──────────────────────────────────────────────────
+  Future<void> escalateComplaint(String complaintId, [String? targetRole]) async {
+    final complaint = _complaints.where((c) => c.id == complaintId).firstOrNull;
+    if (complaint == null) return;
+
+    String nextTarget = targetRole ?? '';
+    if (nextTarget.isEmpty) {
+      if (_currentUser?.role == UserRole.categoryOfficer) {
+        nextTarget = 'wardAdmin';
+      } else if (_currentUser?.role == UserRole.wardAdmin) {
+        nextTarget = 'mandalOfficer';
+      } else if (_currentUser?.role == UserRole.mandalOfficer) {
+        nextTarget = 'superAdmin';
+      } else {
+        nextTarget = 'superAdmin';
+      }
+    }
+
+    complaint.isPushed = true;
+    complaint.pushedTo = nextTarget;
+    complaint.status = ComplaintStatus.inProgress;
+    complaint.priority = ComplaintPriority.high;
+
+    notifyListeners();
+
+    if (isSupabaseConnected) {
+      try {
+        await SupabaseService.escalateComplaintInDb(complaintId, nextTarget);
+        
+        final targetRoleEnum = UserRole.values.where((r) => r.name == nextTarget).firstOrNull;
+        final targetUsers = _users.where((u) => u.role == targetRoleEnum).toList();
+        final List<Map<String, dynamic>> notifs = [];
+        for (var u in targetUsers) {
+          notifs.add({
+            'id': 'notif_${DateTime.now().millisecondsSinceEpoch}_${u.id.hashCode}',
+            'userId': u.id,
+            'title': 'Complaint Escalated',
+            'body': 'Complaint #${complaint.id.length > 8 ? complaint.id.substring(0, 8).toUpperCase() : complaint.id} (${complaint.category}) has been escalated to your queue.',
+            'type': 'complaint',
+            'reference_id': complaint.id,
+            'isRead': false,
+            'createdAt': DateTime.now().toUtc().toIso8601String(),
+          });
+        }
+        if (notifs.isNotEmpty) {
+          await SupabaseService.createNotifications(notifs);
+        }
+      } catch (e) {
+        debugPrint('Error escalating complaint in Supabase DB: $e');
+      }
+    }
+  }
+
+
   // ─── Auth ───────────────────────────────────────────────────────────────────
   // Returns null on success, or an error message string on failure
   Future<String?> login(String phone, String password) async {
     final trimmedPhone = phone.trim();
     final trimmedPassword = password.trim();
 
-    if (isSupabaseConnected) {
-      final user = await SupabaseService.loginUser(
-        trimmedPhone,
-        trimmedPassword,
-      );
-      if (user != null) {
-        _currentUser = user;
-        _loadNotifications();
-        await Hive.box('app_settings').put('logged_in_user', user.toMap());
-        notifyListeners();
-        return null; // success
-      }
-      // Try to find out WHY login failed — phone not found or wrong password?
-      final phoneCheck = _users
-          .where((u) => u.phoneNumber.trim() == trimmedPhone)
-          .firstOrNull;
-      if (phoneCheck == null) {
-        return 'Phone number not registered. Please check and try again.';
-      }
-      return 'Incorrect password. Please try again.';
-    } else {
-      // Offline fallback login
-      final user = _users
-          .where(
-            (u) =>
-                u.phoneNumber.trim() == trimmedPhone &&
-                u.password.trim() == trimmedPassword,
-          )
-          .firstOrNull;
-      if (user != null) {
-        _currentUser = user;
-        _loadNotifications();
-        await Hive.box('app_settings').put('logged_in_user', user.toMap());
-        notifyListeners();
-        return null; // success
-      }
-      final phoneCheck = _users
-          .where((u) => u.phoneNumber.trim() == trimmedPhone)
-          .firstOrNull;
-      if (phoneCheck == null) {
-        return 'Phone number not registered. Please check and try again.';
-      }
-      return 'Incorrect password. Please try again.';
+    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(trimmedPhone)) {
+      return isTelugu
+          ? 'చెల్లని మొబైల్ సంఖ్య. దయచేసి సరైన 10 అంకెల మొబైల్ సంఖ్యను నమోదు చేయండి.'
+          : 'Invalid mobile number. Enter a valid 10-digit Indian mobile number.';
     }
+    if (trimmedPassword.isEmpty) {
+      return isTelugu ? 'పాస్‌వర్డ్‌ను నమోదు చేయండి.' : 'Password is required.';
+    }
+
+    debugPrint('================= AUTH LOGIN DEBUG =================');
+    debugPrint('Entered phone number: "$trimmedPhone"');
+    debugPrint('Entered password: "$trimmedPassword"');
+
+    Map<String, dynamic>? userMap;
+    if (isSupabaseConnected) {
+      userMap = await SupabaseService.getUserMapByPhone(trimmedPhone);
+    } else {
+      final localUser = _users.where((u) => u.phoneNumber.trim() == trimmedPhone).firstOrNull;
+      if (localUser != null) {
+        userMap = localUser.toMap();
+      }
+    }
+
+    debugPrint('Supabase query result: ${userMap ?? "No user found"}');
+
+    if (userMap == null) {
+      debugPrint('Login decision: FAILED (User not found)');
+      return isTelugu ? 'యూజర్ కనుగొనబడలేదు' : 'User not found';
+    }
+
+    final storedPassword = (userMap['password'] ?? '').toString().trim();
+    if (storedPassword != trimmedPassword) {
+      debugPrint('Login decision: FAILED (Incorrect password. Stored: "$storedPassword" vs Entered: "$trimmedPassword")');
+      return isTelugu ? 'తప్పు పాస్‌వర్డ్' : 'Incorrect password';
+    }
+
+    final user = User.fromMap(userMap);
+    _currentUser = user;
+    _loadNotifications();
+    _startFirestoreStreams();
+    await Hive.box('app_settings').put('logged_in_user', user.toMap());
+
+    String navigationTarget = 'Unknown';
+    switch (user.role) {
+      case UserRole.citizen:
+        navigationTarget = 'Citizen Dashboard';
+        break;
+      case UserRole.wardAdmin:
+        navigationTarget = 'Ward Officer Dashboard';
+        break;
+      case UserRole.categoryOfficer:
+        navigationTarget = 'Category Officer Dashboard';
+        break;
+      case UserRole.mandalOfficer:
+        navigationTarget = 'Mandal Officer Dashboard';
+        break;
+      case UserRole.superAdmin:
+        navigationTarget = 'Super Admin Dashboard';
+        break;
+    }
+
+    debugPrint('User ID: ${user.id}');
+    debugPrint('Role: ${user.role.name}');
+    debugPrint('Login decision: SUCCESS');
+    debugPrint('Navigation target: $navigationTarget');
+    debugPrint('===================================================');
+
+    notifyListeners();
+    return null; // success
   }
 
   void loginAsUser(User user) {
     _currentUser = user;
     _loadNotifications();
+    _startFirestoreStreams();
     Hive.box('app_settings').put('logged_in_user', user.toMap());
     notifyListeners();
   }
 
-  void logout() {
-    _currentUser = null;
-    _notifications = [];
+  Future<void> logout() async {
+    try {
+      if (isSupabaseConnected) {
+        await Supabase.instance.client.auth.signOut();
+      }
+    } catch (e) {
+      debugPrint('Supabase signOut error: $e');
+    }
+
+    _wardsSub?.cancel();
+    _wardsSub = null;
+    _usersSub?.cancel();
+    _usersSub = null;
+    _complaintsSub?.cancel();
+    _complaintsSub = null;
     _notificationsSub?.cancel();
     _notificationsSub = null;
-    Hive.box('app_settings').delete('logged_in_user');
+    _broadcastsSub?.cancel();
+    _broadcastsSub = null;
+    _announcementsSub?.cancel();
+    _announcementsSub = null;
+    _wardUpdatesSub?.cancel();
+    _wardUpdatesSub = null;
+    _completedWorksSub?.cancel();
+    _completedWorksSub = null;
+    _meetingsSub?.cancel();
+    _meetingsSub = null;
+
+    _currentUser = null;
+    _notifications = [];
+    _complaints = [];
+    _workUpdates = [];
+    _completedWorks = [];
+
+    try {
+      await Hive.box('app_settings').delete('logged_in_user');
+      await Hive.box('local_complaints').clear();
+      await Hive.box('local_notifications').clear();
+      await Hive.box('local_broadcasts').clear();
+    } catch (e) {
+      debugPrint('Hive clear error: $e');
+    }
+
     notifyListeners();
   }
 
@@ -731,6 +1120,18 @@ class AppState extends ChangeNotifier {
     bool isEmployed,
     String education,
   ) async {
+    final cleanPhone = phone.trim();
+    final cleanPassword = password.trim();
+    final cleanName = name.trim();
+
+    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(cleanPhone)) return false;
+    final hasUpper = RegExp(r'[A-Z]').hasMatch(cleanPassword);
+    final hasLower = RegExp(r'[a-z]').hasMatch(cleanPassword);
+    final hasDigit = RegExp(r'\d').hasMatch(cleanPassword);
+    final hasSpecial = RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(cleanPassword);
+    if (cleanPassword.length < 8 || !hasUpper || !hasLower || !hasDigit || !hasSpecial) return false;
+    if (cleanName.isEmpty) return false;
+
     if (isSupabaseConnected) {
       final user = await SupabaseService.registerUser(
         name,
@@ -771,12 +1172,23 @@ class AppState extends ChangeNotifier {
   Future<void> updateUserProfile(
     String name,
     String phone,
-    String? profilePhotoUrl,
-  ) async {
+    String? profilePhotoUrl, {
+    Uint8List? profilePhotoBytes,
+  }) async {
     if (_currentUser == null) return;
 
     String? finalPhotoUrl = profilePhotoUrl ?? _currentUser!.profilePhotoUrl;
-    if (finalPhotoUrl != null && !finalPhotoUrl.startsWith('http')) {
+    if (kIsWeb && profilePhotoBytes != null) {
+      if (isSupabaseConnected) {
+        final cloudUrl = await SupabaseService.uploadProfileImageBytes(
+          profilePhotoBytes,
+          _currentUser!.id,
+        );
+        if (cloudUrl != null) {
+          finalPhotoUrl = cloudUrl;
+        }
+      }
+    } else if (!kIsWeb && finalPhotoUrl != null && !finalPhotoUrl.startsWith('http') && !finalPhotoUrl.startsWith('blob:')) {
       final file = File(finalPhotoUrl);
       if (file.existsSync()) {
         if (isSupabaseConnected) {
@@ -799,9 +1211,15 @@ class AppState extends ChangeNotifier {
       role: _currentUser!.role,
       wardId: _currentUser!.wardId,
       wardName: _currentUser!.wardName,
+      mandalName: _currentUser!.mandalName,
+      villageName: _currentUser!.villageName,
       officerRole: _currentUser!.officerRole,
       createdAt: _currentUser!.createdAt,
       profilePhotoUrl: finalPhotoUrl,
+      profileImageUrl: _currentUser!.profileImageUrl,
+      fcmToken: _currentUser!.fcmToken,
+      isEmployed: _currentUser!.isEmployed,
+      education: _currentUser!.education,
     );
 
     _currentUser = updatedUser;
@@ -823,7 +1241,31 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateProfilePhotoLocally(String pathOrUrl) {
+    if (_currentUser == null) return;
+    _currentUser = User(
+      id: _currentUser!.id,
+      name: _currentUser!.name,
+      phoneNumber: _currentUser!.phoneNumber,
+      password: _currentUser!.password,
+      role: _currentUser!.role,
+      wardId: _currentUser!.wardId,
+      wardName: _currentUser!.wardName,
+      mandalName: _currentUser!.mandalName,
+      villageName: _currentUser!.villageName,
+      officerRole: _currentUser!.officerRole,
+      createdAt: _currentUser!.createdAt,
+      profilePhotoUrl: pathOrUrl,
+      profileImageUrl: _currentUser!.profileImageUrl,
+      fcmToken: _currentUser!.fcmToken,
+      isEmployed: _currentUser!.isEmployed,
+      education: _currentUser!.education,
+    );
+    notifyListeners();
+  }
+
   Future<void> syncOfflineProfilePhotos() async {
+    if (kIsWeb) return;
     if (!isSupabaseConnected || _currentUser == null) return;
     final photo = _currentUser!.profilePhotoUrl;
     if (photo != null && !photo.startsWith('http')) {
@@ -998,13 +1440,20 @@ class AppState extends ChangeNotifier {
     required String wardName,
     required String villageName,
     required String mandalName,
+    List<Uint8List>? images,
+    List<Uint8List>? videos,
+    List<String>? preUploadedImageUrls,
+    List<String>? preUploadedVideoUrls,
+    String? complaintId,
     String? imageUrl,
-    Uint8List? imageBytes,
-    bool isVideo = false,
+    Function(double progress)? onProgress,
   }) async {
     if (_currentUser == null) return;
 
-    final complaintId = 'comp_${DateTime.now().millisecondsSinceEpoch}';
+    final String actualComplaintId = complaintId ?? (() {
+      final randomSuffix = DateTime.now().microsecondsSinceEpoch % 100000;
+      return 'comp_${DateTime.now().millisecondsSinceEpoch}_$randomSuffix';
+    })();
 
     // Simple device/network details capture
     String systemInfo = 'Unknown Platform';
@@ -1020,44 +1469,65 @@ class AppState extends ChangeNotifier {
       systemInfo = 'Platform Simulator';
     }
 
-    String? finalImageUrl = imageUrl;
+    final List<String> uploadedImageUrls = preUploadedImageUrls ?? [];
+    final List<String> uploadedVideoUrls = preUploadedVideoUrls ?? [];
 
-    if (imageBytes != null) {
-      if (isSupabaseConnected) {
-        final cloudUrl = await SupabaseService.uploadComplaintBytes(
-          imageBytes,
-          complaintId,
-          isVideo: isVideo,
-        );
-        if (cloudUrl != null) {
-          finalImageUrl = cloudUrl;
+    if (preUploadedImageUrls == null && preUploadedVideoUrls == null) {
+      Future<String> uploadWithRetry(Uint8List bytes, String destinationPath, String contentType) async {
+        int attempts = 3;
+        while (attempts > 0) {
+          try {
+            final url = await SupabaseService.uploadComplaintBytesCustom(bytes, destinationPath, contentType);
+            if (url != null) {
+              return url;
+            }
+          } catch (e) {
+            debugPrint('[STORAGE] Upload attempt failed for path $destinationPath: $e');
+          }
+          attempts--;
+          if (attempts > 0) {
+            await Future.delayed(const Duration(seconds: 1));
+          }
         }
+        throw Exception('Failed to upload media to storage after 3 attempts');
       }
-    } else if (imageUrl != null &&
-        (imageUrl.startsWith('local:') ||
-            imageUrl.startsWith('local_video:'))) {
-      if (!kIsWeb) {
-        final isVideoFile = imageUrl.startsWith('local_video:');
-        final localPath = imageUrl.substring(
-          isVideoFile ? 'local_video:'.length : 'local:'.length,
-        );
-        final file = File(localPath);
-        if (file.existsSync()) {
-          if (isSupabaseConnected) {
-            final cloudUrl = await SupabaseService.uploadComplaintImage(
-              file,
-              complaintId,
-            );
-            if (cloudUrl != null) {
-              finalImageUrl = cloudUrl;
+
+      if (isSupabaseConnected) {
+        final int totalFiles = (images?.length ?? 0) + (videos?.length ?? 0);
+        int uploadedCount = 0;
+
+        if (images != null) {
+          for (int i = 0; i < images.length; i++) {
+            final path = '$actualComplaintId/images/image_${i + 1}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+            final url = await uploadWithRetry(images[i], path, 'image/jpeg');
+            uploadedImageUrls.add(url);
+            uploadedCount++;
+            if (onProgress != null && totalFiles > 0) {
+              onProgress(uploadedCount / totalFiles);
             }
           }
+        }
+
+        if (videos != null) {
+          for (int i = 0; i < videos.length; i++) {
+            final path = '$actualComplaintId/videos/video_${i + 1}_${DateTime.now().millisecondsSinceEpoch}.mp4';
+            final url = await uploadWithRetry(videos[i], path, 'video/mp4');
+            uploadedVideoUrls.add(url);
+            uploadedCount++;
+            if (onProgress != null && totalFiles > 0) {
+              onProgress(uploadedCount / totalFiles);
+            }
+          }
+        }
+      } else {
+        if (imageUrl != null) {
+          uploadedImageUrls.add(imageUrl);
         }
       }
     }
 
     final tempComplaint = Complaint(
-      id: complaintId,
+      id: actualComplaintId,
       userId: _currentUser!.id,
       citizenName: _currentUser!.name,
       citizenPhone: _currentUser!.phoneNumber,
@@ -1090,26 +1560,25 @@ class AppState extends ChangeNotifier {
       mandalName: tempComplaint.mandalName,
       address: tempComplaint.address,
       assignedOfficerId: assignedOfficer?.id,
-      imageUrl: finalImageUrl,
+      imageUrls: uploadedImageUrls,
+      videoUrls: uploadedVideoUrls,
       status: ComplaintStatus.submitted,
       priority: ComplaintPriority.low,
       deviceInfo: systemInfo,
       createdAt: tempComplaint.createdAt,
     );
+
     if (isSupabaseConnected) {
       await SupabaseService.submitComplaint(newComplaint);
-      // Update local state instantly so UI updates without waiting for Realtime stream
       final index = _complaints.indexWhere((c) => c.id == newComplaint.id);
       if (index == -1) {
         _complaints = [newComplaint, ..._complaints];
         notifyListeners();
       }
     } else {
-      // Offline queue storage
       final box = Hive.box('local_complaints');
       await box.put(newComplaint.id, newComplaint.toMap());
 
-      // Update local state temporarily so user sees it in list
       _complaints = [newComplaint, ..._complaints];
       notifyListeners();
     }
@@ -1117,6 +1586,7 @@ class AppState extends ChangeNotifier {
 
   // ─── Caching Auto-Sync Queue ────────────────────────────────────────────────
   Future<void> syncOfflineComplaints() async {
+    if (kIsWeb) return;
     final box = Hive.box('local_complaints');
     if (box.isEmpty) return;
 
@@ -1210,6 +1680,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> syncOfflineBroadcasts() async {
+    if (kIsWeb) return;
     final box = Hive.box('local_broadcasts');
     final keys = box.keys
         .where((k) => k.toString().startsWith('queue_'))
@@ -1529,6 +2000,23 @@ class AppState extends ChangeNotifier {
     ComplaintStatus newStatus, {
     String? resolvedImageUrl,
   }) async {
+    String? finalResolvedUrl = resolvedImageUrl;
+    if (isSupabaseConnected &&
+        resolvedImageUrl != null &&
+        !resolvedImageUrl.startsWith('http://') &&
+        !resolvedImageUrl.startsWith('https://')) {
+      final file = File(resolvedImageUrl);
+      if (file.existsSync()) {
+        final cloudUrl = await SupabaseService.uploadResolvedComplaintImage(
+          file,
+          complaintId,
+        );
+        if (cloudUrl != null) {
+          finalResolvedUrl = cloudUrl;
+        }
+      }
+    }
+
     // Optimistically update local state for immediate UI feedback
     final index = _complaints.indexWhere((c) => c.id == complaintId);
     Complaint? updatedComplaint;
@@ -1549,7 +2037,7 @@ class AppState extends ChangeNotifier {
         assignedOfficerId: existing.assignedOfficerId,
         address: existing.address,
         imageUrl: existing.imageUrl,
-        resolvedImageUrl: resolvedImageUrl ?? existing.resolvedImageUrl,
+        resolvedImageUrl: finalResolvedUrl ?? existing.resolvedImageUrl,
         status: newStatus,
         priority: existing.priority,
         createdAt: existing.createdAt,
@@ -1568,7 +2056,7 @@ class AppState extends ChangeNotifier {
       await SupabaseService.updateComplaintStatus(
         complaintId,
         newStatus,
-        resolvedImageUrl: resolvedImageUrl,
+        resolvedImageUrl: finalResolvedUrl,
       );
     } else if (updatedComplaint != null) {
       final box = Hive.box('local_complaints');
@@ -1684,49 +2172,6 @@ class AppState extends ChangeNotifier {
 
     if (isSupabaseConnected) {
       await SupabaseService.forwardComplaint(complaintId, targetRole);
-    }
-  }
-
-  Future<void> escalateComplaint(String complaintId, String targetRole) async {
-    // Optimistic local update
-    final index = _complaints.indexWhere((c) => c.id == complaintId);
-    if (index != -1) {
-      final existing = _complaints[index];
-      final updated = Complaint(
-        id: existing.id,
-        userId: existing.userId,
-        citizenName: existing.citizenName,
-        citizenPhone: existing.citizenPhone,
-        category: existing.category,
-        description: existing.description,
-        latitude: existing.latitude,
-        longitude: existing.longitude,
-        wardId: existing.wardId,
-        wardName: existing.wardName,
-        villageName: existing.villageName,
-        assignedOfficerId: existing.assignedOfficerId,
-        address: existing.address,
-        imageUrl: existing.imageUrl,
-        resolvedImageUrl: existing.resolvedImageUrl,
-        status: existing.status,
-        priority: ComplaintPriority.high,
-        createdAt: existing.createdAt,
-        resolvedAt: existing.resolvedAt,
-        deviceInfo: existing.deviceInfo,
-        feedbackRating: existing.feedbackRating,
-        isClosed: existing.isClosed,
-        isPushed: true,
-        pushedTo: targetRole,
-      );
-      _complaints[index] = updated;
-
-      final box = Hive.box('local_complaints');
-      await box.put(complaintId, updated.toMap());
-      notifyListeners();
-    }
-
-    if (isSupabaseConnected) {
-      await SupabaseService.escalateComplaint(complaintId, targetRole);
     }
   }
 
@@ -2183,5 +2628,363 @@ class AppState extends ChangeNotifier {
     }
     _users[index] = updated;
     notifyListeners();
+  }
+
+  void _loadLocalMLABroadcasts() {
+    final settingsBox = Hive.box('app_settings');
+    final cached = settingsBox.get('mla_broadcasts');
+    if (cached != null) {
+      final list = List<dynamic>.from(cached);
+      _mlaBroadcasts = list.map((item) => MLABroadcast.fromJson(Map<String, dynamic>.from(item))).toList();
+    } else {
+      _mlaBroadcasts = [
+        MLABroadcast(
+          id: 'mb_1',
+          title: 'Constituency Development Masterplan 2026',
+          description: 'A detailed overview of the Rajahmundry urban developmental milestones, upcoming flyover projects, and park revamps.',
+          mediaType: 'document',
+          photoUrl: 'assets/documents/masterplan.pdf',
+          syndicatedPlatforms: ['facebook', 'twitter'],
+          createdAt: DateTime.now().subtract(const Duration(days: 3)),
+          createdBy: 'mla',
+          visibility: 'public',
+          published: true,
+          status: 'published',
+          isDeleted: false,
+          views: 310,
+          likes: 54,
+          shares: 20,
+        ),
+        MLABroadcast(
+          id: 'mb_2',
+          title: 'Reviewing Rythu Bazar Facilities',
+          description: 'Inspecting cleanliness and checking availability of fresh produce at subsidized prices for our citizens.',
+          mediaType: 'reel',
+          videoUrl: 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
+          syndicatedPlatforms: ['instagram', 'youtube', 'facebook'],
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+          createdBy: 'mla',
+          visibility: 'public',
+          published: true,
+          status: 'published',
+          isDeleted: false,
+          views: 2400,
+          likes: 412,
+          shares: 95,
+        ),
+      ];
+      _saveLocalMLABroadcasts();
+    }
+  }
+
+  void _saveLocalMLABroadcasts() {
+    final settingsBox = Hive.box('app_settings');
+    settingsBox.put('mla_broadcasts', _mlaBroadcasts.map((e) => e.toJson()).toList());
+  }
+
+  Future<void> fetchMLABroadcastsFromSupabase() async {
+    if (isSupabaseConnected) {
+      try {
+        final response = await Supabase.instance.client
+            .from('mla_broadcasts')
+            .select()
+            .eq('published', true)
+            .eq('visibility', 'public')
+            .eq('is_deleted', false)
+            .order('created_at', ascending: false);
+        if (response != null) {
+          final list = List<dynamic>.from(response);
+          _mlaBroadcasts = list.map((item) => MLABroadcast.fromJson(Map<String, dynamic>.from(item))).toList();
+          _saveLocalMLABroadcasts();
+          notifyListeners();
+        }
+      } catch (e) {
+        debugPrint('Error fetching mla_broadcasts from Supabase: $e');
+      }
+    }
+  }
+
+  Future<void> addMLABroadcast(MLABroadcast broadcast) async {
+    _mlaBroadcasts.insert(0, broadcast);
+    _saveLocalMLABroadcasts();
+
+    if (isSupabaseConnected) {
+      try {
+        await Supabase.instance.client.from('mla_broadcasts').insert(broadcast.toJson());
+        
+        // Generate and send notifications to all citizens
+        if (broadcast.published && !broadcast.isDeleted) {
+          final citizens = _users.where((u) => u.role == UserRole.citizen).toList();
+          final ts = DateTime.now().millisecondsSinceEpoch;
+          List<AppNotification> notifs = citizens.map((citizen) {
+            return AppNotification(
+              id: 'notif_mla_${ts}_${citizen.id.hashCode}',
+              userId: citizen.id,
+              title: 'New MLA Update',
+              body: broadcast.title,
+              type: 'mla_update',
+              createdAt: DateTime.now(),
+              isRead: false,
+              complaintId: broadcast.id,
+            );
+          }).toList();
+          await SupabaseService.batchInsertNotifications(notifs);
+        }
+      } catch (e) {
+        debugPrint('Error inserting broadcast to Supabase: $e');
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> deleteMLABroadcast(MLABroadcast broadcast) async {
+    _mlaBroadcasts.removeWhere((b) => b.id == broadcast.id);
+    _saveLocalMLABroadcasts();
+    notifyListeners();
+
+    if (isSupabaseConnected) {
+      try {
+        // Delete from storage if it exists and is uploaded
+        if (broadcast.mediaUrl.contains('mla_broadcasts/')) {
+          final uri = Uri.parse(broadcast.mediaUrl);
+          final pathSegments = uri.pathSegments;
+          final bucketIndex = pathSegments.indexOf('app_assets');
+          if (bucketIndex != -1 && bucketIndex < pathSegments.length - 1) {
+            final storagePath = pathSegments.sublist(bucketIndex + 1).join('/');
+            await Supabase.instance.client.storage.from('app_assets').remove([storagePath]);
+            debugPrint('[STORAGE] Removed from storage: $storagePath');
+          }
+        }
+        
+        // Update database is_deleted status
+        await Supabase.instance.client
+            .from('mla_broadcasts')
+            .update({'is_deleted': true, 'published': false, 'status': 'failed'})
+            .eq('id', broadcast.id);
+      } catch (e) {
+        debugPrint('Error deleting broadcast from Supabase: $e');
+      }
+    }
+  }
+
+  Future<void> updateMLABroadcast(MLABroadcast updated) async {
+    final idx = _mlaBroadcasts.indexWhere((b) => b.id == updated.id);
+    if (idx != -1) {
+      _mlaBroadcasts[idx] = updated;
+    } else {
+      _mlaBroadcasts.insert(0, updated);
+    }
+    _saveLocalMLABroadcasts();
+    notifyListeners();
+
+    if (isSupabaseConnected) {
+      try {
+        await Supabase.instance.client
+            .from('mla_broadcasts')
+            .upsert(updated.toJson());
+            
+        // Generate notifications if transitioning to published
+        if (updated.published && updated.status == 'published' && !updated.isDeleted) {
+          final citizens = _users.where((u) => u.role == UserRole.citizen).toList();
+          final ts = DateTime.now().millisecondsSinceEpoch;
+          List<AppNotification> notifs = citizens.map((citizen) {
+            return AppNotification(
+              id: 'notif_mla_${ts}_${citizen.id.hashCode}',
+              userId: citizen.id,
+              title: 'New MLA Update',
+              body: updated.title,
+              type: 'mla_update',
+              createdAt: DateTime.now(),
+              isRead: false,
+              complaintId: updated.id,
+            );
+          }).toList();
+          await SupabaseService.batchInsertNotifications(notifs);
+        }
+      } catch (e) {
+        debugPrint('Error updating broadcast in Supabase: $e');
+      }
+    }
+  }
+
+  Future<void> checkScheduledBroadcasts() async {
+    final now = DateTime.now();
+    bool hasChanges = false;
+    for (int i = 0; i < _mlaBroadcasts.length; i++) {
+      final b = _mlaBroadcasts[i];
+      if (b.status == 'scheduled' && b.scheduledAt != null && b.scheduledAt!.isBefore(now)) {
+        final publishedBroadcast = MLABroadcast(
+          id: b.id,
+          title: b.title,
+          description: b.description,
+          mediaType: b.mediaType,
+          videoUrl: b.videoUrl,
+          photoUrl: b.photoUrl,
+          thumbnailUrl: b.thumbnailUrl,
+          syndicatedPlatforms: b.syndicatedPlatforms,
+          createdAt: b.createdAt,
+          updatedAt: DateTime.now(),
+          scheduledAt: b.scheduledAt,
+          publishedAt: DateTime.now(),
+          createdBy: b.createdBy,
+          visibility: b.visibility,
+          status: 'published',
+          published: true,
+          isDeleted: b.isDeleted,
+          views: b.views,
+          likes: b.likes,
+          shares: b.shares,
+        );
+        _mlaBroadcasts[i] = publishedBroadcast;
+        hasChanges = true;
+        
+        if (isSupabaseConnected) {
+          try {
+            await Supabase.instance.client
+                .from('mla_broadcasts')
+                .upsert(publishedBroadcast.toJson());
+                
+            // Send push notification to all citizens
+            final citizens = _users.where((u) => u.role == UserRole.citizen).toList();
+            final ts = DateTime.now().millisecondsSinceEpoch;
+            List<AppNotification> notifs = citizens.map((citizen) {
+              return AppNotification(
+                id: 'notif_mla_${ts}_${citizen.id.hashCode}',
+                userId: citizen.id,
+                title: 'New MLA Update',
+                body: publishedBroadcast.title,
+                type: 'mla_update',
+                createdAt: DateTime.now(),
+                isRead: false,
+                complaintId: publishedBroadcast.id,
+              );
+            }).toList();
+            await SupabaseService.batchInsertNotifications(notifs);
+          } catch (e) {
+            debugPrint('Error publishing scheduled broadcast: $e');
+          }
+        }
+      }
+    }
+    if (hasChanges) {
+      _saveLocalMLABroadcasts();
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleLikeMLABroadcast(String broadcastId) async {
+    if (_currentUser == null) return;
+    
+    // Check if liked locally/cached
+    final settingsBox = Hive.box('app_settings');
+    final likeKey = 'like_${broadcastId}_${_currentUser!.id}';
+    final alreadyLiked = settingsBox.get(likeKey, defaultValue: false) as bool;
+
+    // Toggle local state
+    await settingsBox.put(likeKey, !alreadyLiked);
+
+    // Update in memory list views/likes counts optimistically
+    final idx = _mlaBroadcasts.indexWhere((b) => b.id == broadcastId);
+    if (idx != -1) {
+      final b = _mlaBroadcasts[idx];
+      _mlaBroadcasts[idx] = MLABroadcast(
+        id: b.id,
+        title: b.title,
+        description: b.description,
+        mediaType: b.mediaType,
+        videoUrl: b.videoUrl,
+        photoUrl: b.photoUrl,
+        thumbnailUrl: b.thumbnailUrl,
+        syndicatedPlatforms: b.syndicatedPlatforms,
+        createdAt: b.createdAt,
+        updatedAt: b.updatedAt,
+        scheduledAt: b.scheduledAt,
+        publishedAt: b.publishedAt,
+        createdBy: b.createdBy,
+        visibility: b.visibility,
+        status: b.status,
+        published: b.published,
+        isDeleted: b.isDeleted,
+        views: b.views,
+        likes: b.likes + (alreadyLiked ? -1 : 1),
+        shares: b.shares,
+      );
+      _saveLocalMLABroadcasts();
+      notifyListeners();
+    }
+
+    if (isSupabaseConnected) {
+      try {
+        if (alreadyLiked) {
+          await Supabase.instance.client
+              .from('mla_broadcast_likes')
+              .delete()
+              .eq('broadcast_id', broadcastId)
+              .eq('user_id', _currentUser!.id);
+        } else {
+          await Supabase.instance.client.from('mla_broadcast_likes').insert({
+            'broadcast_id': broadcastId,
+            'user_id': _currentUser!.id,
+          });
+        }
+        
+        // Update total likes count in main table
+        final countResponse = await Supabase.instance.client
+            .from('mla_broadcast_likes')
+            .select()
+            .eq('broadcast_id', broadcastId);
+        final int totalLikes = (countResponse as List).length;
+        
+        await Supabase.instance.client
+            .from('mla_broadcasts')
+            .update({'likes': totalLikes})
+            .eq('id', broadcastId);
+      } catch (e) {
+        debugPrint('Error toggling like in Supabase: $e');
+      }
+    }
+  }
+
+  Future<bool> isMLABroadcastLiked(String broadcastId) async {
+    if (_currentUser == null) return false;
+    final settingsBox = Hive.box('app_settings');
+    final likeKey = 'like_${broadcastId}_${_currentUser!.id}';
+    return settingsBox.get(likeKey, defaultValue: false) as bool;
+  }
+
+  Future<void> addCommentToMLABroadcast(String broadcastId, String commentText) async {
+    if (_currentUser == null || commentText.trim().isEmpty) return;
+
+    if (isSupabaseConnected) {
+      try {
+        await Supabase.instance.client.from('mla_broadcast_comments').insert({
+          'broadcast_id': broadcastId,
+          'user_id': _currentUser!.id,
+          'user_name': _currentUser!.name,
+          'comment_text': commentText.trim(),
+        });
+
+        // Fetch latest feed from Supabase
+        await fetchMLABroadcastsFromSupabase();
+      } catch (e) {
+        debugPrint('Error adding comment to Supabase: $e');
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCommentsForMLABroadcast(String broadcastId) async {
+    if (isSupabaseConnected) {
+      try {
+        final response = await Supabase.instance.client
+            .from('mla_broadcast_comments')
+            .select()
+            .eq('broadcast_id', broadcastId)
+            .order('created_at', ascending: false);
+        return List<Map<String, dynamic>>.from(response);
+      } catch (e) {
+        debugPrint('Error fetching comments: $e');
+      }
+    }
+    return [];
   }
 }

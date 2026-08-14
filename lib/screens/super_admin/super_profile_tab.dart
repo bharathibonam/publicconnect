@@ -18,17 +18,42 @@ class SuperProfileTab extends StatefulWidget {
 class _SuperProfileTabState extends State<SuperProfileTab> {
   bool _isUploading = false;
 
+  void _showInfoDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('CLOSE', style: TextStyle(color: Provider.of<ThemeProvider>(context, listen: false).activeParty.primaryColor, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _updateProfilePhoto(ImageSource source) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
     if (pickedFile == null) return;
 
+    final appState = Provider.of<AppState>(context, listen: false);
+    appState.updateProfilePhotoLocally(pickedFile.path);
+
     setState(() => _isUploading = true);
     if (!mounted) return;
-    final appState = Provider.of<AppState>(context, listen: false);
     final user = appState.currentUser;
     if (user != null) {
-      final cloudUrl = await SupabaseService.uploadProfileImage(File(pickedFile.path), user.id);
+      String? cloudUrl;
+      if (kIsWeb) {
+        final bytes = await pickedFile.readAsBytes();
+        cloudUrl = await SupabaseService.uploadProfileImageBytes(bytes, user.id);
+      } else {
+        cloudUrl = await SupabaseService.uploadProfileImage(File(pickedFile.path), user.id);
+      }
       if (cloudUrl != null) {
         appState.updateUserProfile(user.name, user.phoneNumber, cloudUrl);
         if (mounted) {
@@ -162,12 +187,15 @@ class _SuperProfileTabState extends State<SuperProfileTab> {
                     ),
                   ),
                   const Divider(height: 1),
-                  ListTile(
+                   ListTile(
                     leading: Icon(Icons.lock, color: themeConfig.accentColor),
                     title: const Text('Change Password', style: TextStyle(fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                      // Navigate to change password
+                      _showInfoDialog(
+                        'Change Password',
+                        'Password reset instructions will be sent to your registered mobile number: ${user?.phoneNumber ?? ""}.',
+                      );
                     },
                   ),
                   const Divider(height: 1),
@@ -195,28 +223,48 @@ class _SuperProfileTabState extends State<SuperProfileTab> {
                     leading: Icon(Icons.privacy_tip_outlined, color: themeConfig.accentColor),
                     title: const Text('Privacy Policy', style: TextStyle(fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {},
+                    onTap: () {
+                      _showInfoDialog(
+                        'Privacy Policy',
+                        'This Smart Governance application respects citizen privacy. Image uploads, geographic locations, and contact details are encrypted and securely stored for the sole purpose of complaint management.',
+                      );
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: Icon(Icons.description_outlined, color: themeConfig.accentColor),
                     title: const Text('Terms & Conditions', style: TextStyle(fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {},
+                    onTap: () {
+                      _showInfoDialog(
+                        'Terms & Conditions',
+                        'By using this application, you agree to submit authentic complaints, provide correct contact numbers, and cooperate with mandal/ward officers to resolve municipal issues.',
+                      );
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: Icon(Icons.help_outline, color: themeConfig.accentColor),
                     title: const Text('Help & Support', style: TextStyle(fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {},
+                    onTap: () {
+                      _showInfoDialog(
+                        'Help & Support',
+                        'Need help? Contact the Smart Governance technical support team at support@smartgov.gov.in or call our helpline: 1800-425-1111.',
+                      );
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: Icon(Icons.info_outline, color: themeConfig.accentColor),
                     title: const Text('About', style: TextStyle(fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {},
+                    onTap: () {
+                      _showInfoDialog(
+                        'About Application',
+                        'Smart Governance Platform\nVersion: 1.2.0\nDeveloped to bridge the gap between citizens, ward administrators, and category officers for rapid municipal resolutions.',
+                      );
+                    },
                   ),
                 ],
               ),
@@ -229,11 +277,14 @@ class _SuperProfileTabState extends State<SuperProfileTab> {
                 backgroundColor: Colors.red.shade600,
                 minimumSize: const Size(double.infinity, 50),
               ),
-              onPressed: () {
-                appState.logout();
+              onPressed: () async {
+                await appState.logout();
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+                }
               },
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 120),
           ],
         ),
       ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../services/app_state.dart';
 import '../../services/translation_service.dart';
 import '../../main.dart';
@@ -131,9 +131,11 @@ class _LoginScreenState extends State<LoginScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0, top: 8.0),
             child: Container(
+              height: 40,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.shade300),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -148,15 +150,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   GestureDetector(
                     onTap: () => appState.setLanguage(false),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: !isTelugu ? Theme.of(context).primaryColor : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'English',
+                        'EN',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: !isTelugu ? Colors.white : Colors.grey.shade700,
                         ),
@@ -166,15 +168,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   GestureDetector(
                     onTap: () => appState.setLanguage(true),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: isTelugu ? Theme.of(context).primaryColor : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'తెలుగు',
+                        'TE',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: isTelugu ? Colors.white : Colors.grey.shade700,
                         ),
@@ -188,105 +190,118 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Spacer(flex: 1),
-                // App Logo/Seal Header
-                Center(
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              spreadRadius: 2,
+                        const SizedBox(height: 8),
+                        // App Logo/Seal Header
+                        Center(
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.1),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  width: 90,
+                                  height: 90,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                Trans.t('title', isTelugu),
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isTelugu
+                                    ? 'డిజిటల్ గ్రీవెన్స్ & రిడ్రెస్సల్ పోర్టల్'
+                                    : 'Digital Complaint & Redressal Portal',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Tracking button shown in registration mode
+                        if (!_isLoginMode) ...[
+                          SizedBox(
+                            height: 55,
+                            child: OutlinedButton(
+                              onPressed: () => _showTrackComplaintDialog(context, isTelugu),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                side: BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
+                                foregroundColor: Theme.of(context).primaryColor,
+                                backgroundColor: Colors.white,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.search, size: 20, color: Theme.of(context).primaryColor),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      isTelugu ? 'నమోదు లేకుండా ఫిర్యాదును ట్రాక్ చేయండి' : 'Track Complaint Without Register',
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        Trans.t('title', isTelugu),
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        isTelugu
-                            ? 'డిజిటల్ గ్రీవెన్స్ & రిడ్రెస్సల్ పోర్టల్'
-                            : 'Digital Complaint & Redressal Portal',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(flex: 1),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
-                // Tracking button shown in registration mode
-                if (!_isLoginMode) ...[
-                  OutlinedButton.icon(
-                    onPressed: () => _showTrackComplaintDialog(context, isTelugu),
-                    icon: const Icon(Icons.search),
-                    label: Text(
-                      isTelugu ? 'నమోదు లేకుండా ఫిర్యాదును ట్రాక్ చేయండి' : 'Track Complaint Without Register',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      side: BorderSide(color: Theme.of(context).primaryColor),
-                      foregroundColor: Theme.of(context).primaryColor,
-                      backgroundColor: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Form card
-                Card(
-                  elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  shadowColor: Colors.black.withValues(alpha: 0.1),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: AnimatedSize(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      child: _showOtp ? _buildOtpForm() : _buildCredentialsForm(),
-                    ),
-                  ),
-                ),
+                        // Form card
+                        Card(
+                          elevation: 6,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shadowColor: Colors.black.withValues(alpha: 0.1),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 20.0),
+                            child: AnimatedSize(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              child: _showOtp ? _buildOtpForm() : _buildCredentialsForm(),
+                            ),
+                          ),
+                        ),
 
                 const SizedBox(height: 24),
                 // DB connection status
@@ -351,18 +366,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
                 
-                const Spacer(flex: 2),
+                const SizedBox(height: 16),
               ],
             ),
           ),
         ),
       ),
     );
-  },
-),
-),
-);
-}
+  }
 
   Widget _buildCredentialsForm() {
     final appState = Provider.of<AppState>(context, listen: false);
@@ -378,57 +389,74 @@ class _LoginScreenState extends State<LoginScreen> {
                 ? (isTelugu ? 'ఖాతాకు లాగిన్ చేయండి' : 'Login to Account')
                 : (isTelugu ? 'పౌరుడి నమోదు' : 'Register Citizen'),
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Color(0xFF0F172A),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           if (!_isLoginMode) ...[
             TextFormField(
               controller: _nameController,
+              style: const TextStyle(fontSize: 18),
               decoration: InputDecoration(
                 labelText: Trans.t('name', isTelugu),
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                labelStyle: const TextStyle(fontSize: 17),
+                prefixIcon: const Icon(Icons.person_outline, size: 22),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               validator: (val) => val == null || val.isEmpty 
                   ? (isTelugu ? 'పేరును నమోదు చేయండి' : 'Enter name') 
                   : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
           ],
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
+            style: const TextStyle(fontSize: 18),
             decoration: InputDecoration(
               labelText: Trans.t('phone_number', isTelugu),
-              prefixIcon: const Icon(Icons.phone_outlined),
+              labelStyle: const TextStyle(fontSize: 17),
+              hintStyle: TextStyle(fontSize: 16, color: Colors.grey.shade400),
+              prefixIcon: const Icon(Icons.phone_outlined, size: 22),
               hintText: 'e.g. 9876543210',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             validator: (val) {
-              if (val == null || val.isEmpty) {
-                return isTelugu ? 'మొబైల్ సంఖ్యను నమోదు చేయండి' : 'Enter phone';
+              final clean = (val ?? '').trim();
+              if (clean.isEmpty) {
+                return isTelugu
+                    ? 'దయచేసి మొబైల్ సంఖ్యను నమోదు చేయండి.'
+                    : 'Enter a valid 10-digit Indian mobile number.';
               }
-              if (val.length < 10) {
-                return isTelugu ? '10 అంకెల సంఖ్యను నమోదు చేయండి' : 'Enter 10 digit number';
+              final regExp = RegExp(r'^[6-9]\d{9}$');
+              if (!regExp.hasMatch(clean)) {
+                return isTelugu
+                    ? 'చెల్లని మొబైల్ సంఖ్య. దయచేసి సరైన 10 అంకెల మొబైల్ సంఖ్యను నమోదు చేయండి.'
+                    : 'Invalid mobile number. Enter a valid 10-digit Indian mobile number.';
               }
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
+            style: const TextStyle(fontSize: 18),
             decoration: InputDecoration(
               labelText: Trans.t('password', isTelugu),
-              prefixIcon: const Icon(Icons.lock_outline),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              labelStyle: const TextStyle(fontSize: 17),
+              prefixIcon: const Icon(Icons.lock_outline, size: 22),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  size: 22,
                 ),
                 onPressed: () {
                   setState(() {
@@ -437,60 +465,92 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
               ),
             ),
-            validator: (val) => val == null || val.isEmpty 
-                ? (isTelugu ? 'పాస్‌వర్డ్‌ను నమోదు చేయండి' : 'Enter password') 
-                : null,
+            validator: (val) {
+              final clean = (val ?? '').trim();
+              if (clean.isEmpty) {
+                return isTelugu ? 'పాస్‌వర్డ్‌ను నమోదు చేయండి.' : 'Password is required.';
+              }
+              if (!_isLoginMode) {
+                final hasUpper = RegExp(r'[A-Z]').hasMatch(clean);
+                final hasLower = RegExp(r'[a-z]').hasMatch(clean);
+                final hasDigit = RegExp(r'\d').hasMatch(clean);
+                final hasSpecial = RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(clean);
+                if (clean.length < 8 || !hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+                  return isTelugu
+                      ? 'పాస్‌వర్డ్ కనీసం 8 అక్షరాలు కలిగి ఉండాలి, మరియు పెద్ద బడి, చిన్న బడి, అంకె, ప్రత్యేక అక్షరం ఉండాలి.'
+                      : 'Password must contain:\n• 8+ characters\n• Uppercase letter\n• Lowercase letter\n• Number\n• Special character';
+                }
+              }
+              return null;
+            },
           ),
           if (!_isLoginMode) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               isTelugu ? 'మీరు?' : 'Are You ?',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _isEmployed = true;
-                        _selectedEducation = null;
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isEmployed == true ? Theme.of(context).primaryColor : Colors.grey.shade200,
-                      foregroundColor: _isEmployed == true ? Colors.white : Colors.black,
-                      elevation: 0,
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isEmployed = true;
+                          _selectedEducation = null;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isEmployed == true ? Theme.of(context).primaryColor : Colors.grey.shade200,
+                        foregroundColor: _isEmployed == true ? Colors.white : Colors.black87,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        isTelugu ? 'ఉద్యోగి' : 'Employed',
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    child: Text(isTelugu ? 'ఉద్యోగి' : 'Employed'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _isEmployed = false;
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isEmployed == false ? Theme.of(context).primaryColor : Colors.grey.shade200,
-                      foregroundColor: _isEmployed == false ? Colors.white : Colors.black,
-                      elevation: 0,
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isEmployed = false;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isEmployed == false ? Theme.of(context).primaryColor : Colors.grey.shade200,
+                        foregroundColor: _isEmployed == false ? Colors.white : Colors.black87,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        isTelugu ? 'నిరుద్యోగి' : 'Unemployed',
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    child: Text(isTelugu ? 'నిరుద్యోగి' : 'Unemployed'),
                   ),
                 ),
               ],
             ),
             if (_isEmployed == false) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 isExpanded: true,
+                style: const TextStyle(fontSize: 17, color: Colors.black87),
                 decoration: InputDecoration(
                   labelText: isTelugu ? 'విద్యార్హత' : 'Education Qualification',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  labelStyle: const TextStyle(fontSize: 17),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 initialValue: _selectedEducation,
                 items: [

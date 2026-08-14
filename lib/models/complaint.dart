@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import '../l10n/app_localizations.dart';
 
 enum ComplaintStatus {
   submitted,
   inProgress,
   resolved,
+  rejected,
+  onHold;
 }
 
 enum ComplaintPriority {
   low,
   medium,
-  high,
+  high;
 }
 
 class Complaint {
@@ -21,7 +25,9 @@ class Complaint {
   final String description;
   final String? imageUrl;
   final String? resolvedImageUrl; // Resolution image uploaded by admin
-  final String? voiceUrl;         // Voice complaint audio recording URL
+  final String? voiceUrl;         // Voice complaint audio recording URL (also used as video url fallback)
+  final List<String> imageUrls;
+  final List<String> videoUrls;
   final double latitude;
   final double longitude;
   final String wardId;
@@ -47,9 +53,11 @@ class Complaint {
     required this.citizenPhone,
     required this.category,
     required this.description,
-    this.imageUrl,
+    String? imageUrl,
     this.resolvedImageUrl,
-    this.voiceUrl,
+    String? voiceUrl,
+    List<String>? imageUrls,
+    List<String>? videoUrls,
     required this.latitude,
     required this.longitude,
     required this.wardId,
@@ -67,7 +75,10 @@ class Complaint {
     this.isClosed = false,
     this.isPushed = false,
     this.pushedTo,
-  });
+  }) : this.imageUrl = imageUrl ?? (imageUrls != null && imageUrls.isNotEmpty ? imageUrls.first : null),
+       this.voiceUrl = voiceUrl ?? (videoUrls != null && videoUrls.isNotEmpty ? videoUrls.first : null),
+       this.imageUrls = imageUrls ?? (imageUrl != null ? [imageUrl] : const []),
+       this.videoUrls = videoUrls ?? (voiceUrl != null ? [voiceUrl] : const []);
 
   // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -79,6 +90,10 @@ class Complaint {
         return Colors.amber.shade600;
       case ComplaintStatus.resolved:
         return Colors.green.shade500;
+      case ComplaintStatus.rejected:
+        return Colors.purple.shade400;
+      case ComplaintStatus.onHold:
+        return Colors.blueGrey.shade400;
     }
   }
 
@@ -90,7 +105,47 @@ class Complaint {
         return 'In Progress';
       case ComplaintStatus.resolved:
         return 'Resolved';
+      case ComplaintStatus.rejected:
+        return 'Rejected';
+      case ComplaintStatus.onHold:
+        return 'On Hold';
     }
+  }
+
+  String getLocalizedStatus(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final isTe = loc?.localeName == 'te';
+    switch (status) {
+      case ComplaintStatus.submitted:
+        return isTe ? 'సమర్పించబడింది' : 'Submitted';
+      case ComplaintStatus.inProgress:
+        return isTe ? 'పరిష్కారంలో ఉంది' : 'In Progress';
+      case ComplaintStatus.resolved:
+        return isTe ? 'పరిష్కరించబడింది' : 'Resolved';
+      case ComplaintStatus.rejected:
+        return isTe ? 'తిరస్కరించబడింది' : 'Rejected';
+      case ComplaintStatus.onHold:
+        return isTe ? 'నిలిపివేయబడింది' : 'On Hold';
+    }
+  }
+
+  String getLocalizedCategory(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final isTe = loc?.localeName == 'te';
+    if (!isTe) return category;
+    final catLower = category.trim().toLowerCase();
+    if (catLower.contains('water')) return 'నీటి సరఫరా';
+    if (catLower.contains('electric')) return 'విద్యుత్ సేవలు';
+    if (catLower.contains('road')) return 'రోడ్లు & మౌలిక సదుపాయాలు';
+    if (catLower.contains('sanitat') || catLower.contains('drain')) return 'పారిశుధ్యం';
+    if (catLower.contains('revenue') || catLower.contains('certif')) return 'రెవెన్యూ సేవలు';
+    if (catLower.contains('health')) return 'ఆరోగ్యం';
+    if (catLower.contains('agri')) return 'వ్యవసాయం';
+    if (catLower.contains('educat')) return 'విద్య';
+    if (catLower.contains('women') || catLower.contains('child')) return 'మహిళా & శిశు సంక్షేమం';
+    if (catLower.contains('social')) return 'సామాజిక సంక్షేమం';
+    if (catLower.contains('other')) return 'ఇతర సమస్యలు';
+    return category;
   }
 
   // ─── Priority helpers ────────────────────────────────────────────────────────
@@ -147,9 +202,9 @@ class Complaint {
       'citizenPhone': citizenPhone,
       'category': category,
       'description': description,
-      'imageUrl': imageUrl,
+      'imageUrl': imageUrls.isNotEmpty ? json.encode(imageUrls) : imageUrl,
       'resolvedImageUrl': resolvedImageUrl,
-      'voiceUrl': voiceUrl,
+      'voiceUrl': videoUrls.isNotEmpty ? json.encode(videoUrls) : voiceUrl,
       'latitude': latitude,
       'longitude': longitude,
       'wardId': wardId,
@@ -172,6 +227,36 @@ class Complaint {
 
   factory Complaint.fromMap(Map<String, dynamic> map) {
     try {
+      final rawImageUrl = map['imageUrl']?.toString();
+      List<String> imgList = [];
+      if (rawImageUrl != null && rawImageUrl.isNotEmpty) {
+        if (rawImageUrl.startsWith('[') && rawImageUrl.endsWith(']')) {
+          try {
+            final List decoded = json.decode(rawImageUrl);
+            imgList = decoded.map((e) => e.toString()).toList();
+          } catch (_) {
+            imgList = [rawImageUrl];
+          }
+        } else {
+          imgList = rawImageUrl.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        }
+      }
+
+      final rawVoiceUrl = map['voiceUrl']?.toString();
+      List<String> vidList = [];
+      if (rawVoiceUrl != null && rawVoiceUrl.isNotEmpty) {
+        if (rawVoiceUrl.startsWith('[') && rawVoiceUrl.endsWith(']')) {
+          try {
+            final List decoded = json.decode(rawVoiceUrl);
+            vidList = decoded.map((e) => e.toString()).toList();
+          } catch (_) {
+            vidList = [rawVoiceUrl];
+          }
+        } else {
+          vidList = rawVoiceUrl.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        }
+      }
+
       return Complaint(
         id: map['id']?.toString() ?? '',
         userId: map['userId']?.toString() ?? '',
@@ -179,9 +264,11 @@ class Complaint {
         citizenPhone: map['citizenPhone']?.toString() ?? '',
         category: map['category']?.toString() ?? '',
         description: map['description']?.toString() ?? '',
-        imageUrl: map['imageUrl']?.toString(),
+        imageUrl: imgList.isNotEmpty ? imgList.first : rawImageUrl,
         resolvedImageUrl: map['resolvedImageUrl']?.toString(),
-        voiceUrl: map['voiceUrl']?.toString(),
+        voiceUrl: vidList.isNotEmpty ? vidList.first : rawVoiceUrl,
+        imageUrls: imgList,
+        videoUrls: vidList,
         latitude: double.tryParse(map['latitude']?.toString() ?? '') ?? 0.0,
         longitude: double.tryParse(map['longitude']?.toString() ?? '') ?? 0.0,
         wardId: map['wardId']?.toString() ?? '',
@@ -210,8 +297,6 @@ class Complaint {
       );
     } catch (e) {
       debugPrint('Error parsing complaint fromMap: $e');
-      // Return a dummy error complaint so the stream doesn't crash completely.
-      // This will be filtered out by UI if needed, or at least won't crash the whole list.
       return Complaint(
         id: map['id']?.toString() ?? 'error',
         userId: 'error',

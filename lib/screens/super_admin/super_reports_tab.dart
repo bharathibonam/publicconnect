@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_demo_app/l10n/app_localizations.dart';
 import '../../themes/theme_provider.dart';
+import '../../services/app_state.dart';
 
 class SuperReportsTab extends StatelessWidget {
   const SuperReportsTab({super.key});
@@ -17,7 +18,16 @@ class SuperReportsTab extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.arrow_back, color: Colors.black87),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Provider.of<AppState>(context, listen: false).setSuperAdminTabIndex(0);
+            }
+          },
+        ),
         title: Text(l10n.reports, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
           IconButton(icon: const Icon(Icons.filter_list, color: Colors.black87), onPressed: (){}),

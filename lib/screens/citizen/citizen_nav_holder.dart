@@ -19,6 +19,7 @@ class CitizenNavHolder extends StatefulWidget {
 class _CitizenNavHolderState extends State<CitizenNavHolder> {
   int _currentIndex = 0;
   StreamSubscription? _pushNotifSub;
+  UniqueKey _complaintScreenKey = UniqueKey();
 
   @override
   void initState() {
@@ -89,26 +90,10 @@ class _CitizenNavHolderState extends State<CitizenNavHolder> {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
+                          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14)),
                           const SizedBox(height: 4),
-                          Text(
-                            body,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.black54,
-                            ),
-                          ),
+                          Text(body, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -146,7 +131,11 @@ class _CitizenNavHolderState extends State<CitizenNavHolder> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
-            _currentIndex = appState.requestedCitizenTabIndex!;
+            final targetIdx = appState.requestedCitizenTabIndex!;
+            if (targetIdx == 1) {
+              _complaintScreenKey = UniqueKey();
+            }
+            _currentIndex = targetIdx;
           });
           appState.clearCitizenTabIndex();
         }
@@ -157,6 +146,7 @@ class _CitizenNavHolderState extends State<CitizenNavHolder> {
       CitizenHome(
         onFileComplaintPressed: () {
           setState(() {
+            _complaintScreenKey = UniqueKey();
             _currentIndex = 1;
           });
         },
@@ -172,21 +162,42 @@ class _CitizenNavHolderState extends State<CitizenNavHolder> {
         },
       ),
       NewComplaintScreen(
+        key: _complaintScreenKey,
+        onBackPressed: () => setState(() => _currentIndex = 0),
         onSubmissionSuccess: () {
           setState(() {
             _currentIndex = 2; // Route to tracking screen on success
           });
         },
       ),
-      const TrackComplaintsScreen(),
-      const CitizenProfileScreen(),
+      TrackComplaintsScreen(
+        onBackPressed: () => setState(() => _currentIndex = 0),
+      ),
+      CitizenProfileScreen(
+        onBackPressed: () => setState(() => _currentIndex = 0),
+      ),
     ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: [
+            screens[0],
+            _currentIndex == 1 ? screens[1] : const SizedBox.shrink(),
+            screens[2],
+            screens[3],
+          ],
+        ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -213,6 +224,7 @@ class _CitizenNavHolderState extends State<CitizenNavHolder> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -225,6 +237,9 @@ class _CitizenNavHolderState extends State<CitizenNavHolder> {
       child: GestureDetector(
         onTap: () {
           setState(() {
+            if (index == 1) {
+              _complaintScreenKey = UniqueKey();
+            }
             _currentIndex = index;
           });
         },

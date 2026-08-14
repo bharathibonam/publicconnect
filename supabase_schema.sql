@@ -286,11 +286,38 @@ CREATE TRIGGER trg_sync_announcement_reads BEFORE UPDATE OF "isRead" ON public.n
 
 CREATE OR REPLACE FUNCTION public.auto_notify_completed_work() RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.notifications ("userId", title, body, type, reference_id, "isRead", "createdAt")
-    VALUES (NEW.citizen_id, 'Work Completed: ' || NEW.title, 'Your complaint work has been completed.', 'completed_work', NEW.id, FALSE, NOW());
-    UPDATE public.complaints SET status = 'resolved', resolved_at = NOW() WHERE id = NEW.complaint_id;
+    INSERT INTO public.notifications (
+        id,
+        "userId",
+        title,
+        body,
+        "complaintId",
+        type,
+        notification_type,
+        reference_id,
+        "isRead",
+        "createdAt"
+    ) VALUES (
+        'notif_' || gen_random_uuid()::text,
+        NEW.citizen_id,
+        'Work Completed: ' || COALESCE((SELECT category FROM public.complaints WHERE id = NEW.complaint_id), NEW.title),
+        'Your complaint work has been completed successfully. Please review the completed work.',
+        NEW.complaint_id,
+        'completed_work',
+        'completed_work',
+        NEW.id,
+        FALSE,
+        NOW()
+    );
+
+    UPDATE public.complaints 
+    SET status = 'resolved', 
+        "resolvedAt" = NOW(),
+        "resolvedImageUrl" = NEW.after_image_url
+    WHERE id = NEW.complaint_id;
+
     RETURN NEW;
-END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_notify_completed_work ON public.completed_works;
 CREATE TRIGGER trg_notify_completed_work AFTER INSERT ON public.completed_works FOR EACH ROW EXECUTE FUNCTION public.auto_notify_completed_work();
@@ -1697,8 +1724,147 @@ INSERT INTO public.wards (id, name, "adminId", "adminName", "centerLatitude", "c
 INSERT INTO public.wards (id, name, "adminId", "adminName", "centerLatitude", "centerLongitude", "minLat", "maxLat", "minLng", "maxLng") VALUES ('venkatapuramgp_ward_19', 'Ward 19 - Venkatapuram GP', NULL, NULL, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.wards (id, name, "adminId", "adminName", "centerLatitude", "centerLongitude", "minLat", "maxLat", "minLng", "maxLng") VALUES ('venkatapuramgp_ward_20', 'Ward 20 - Venkatapuram GP', NULL, NULL, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ON CONFLICT (id) DO NOTHING;
 -- ==========================================
--- Administrative Wards (Panchayats & Mandal Level)
+-- Escalation History Table
 -- ==========================================
+CREATE TABLE IF NOT EXISTS public.escalation_history (
+    id TEXT PRIMARY KEY DEFAULT ('esc_hist_' || substring(md5(random()::text), 1, 8)),
+    complaint_id TEXT REFERENCES public.complaints(id) ON DELETE CASCADE,
+    from_role TEXT,
+    to_role TEXT,
+    escalated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    reason TEXT
+);
 
--- Reload the schema cache so Supabase recognizes the new columns immediately
+-- ==========================================
+-- Automatic Escalation PostgreSQL Function
+-- ==========================================
+CREATE OR REPLACE FUNCTION public.auto_escalate_complaints()
+RETURNS void AS $$
+DECLARE
+    rec RECORD;
+    role_user_id TEXT;
+BEGIN
+    -- 1. Level 1: Category Officer -> Ward Member (unresolved > 12h)
+    FOR rec IN 
+        SELECT id, category, "createdAt"
+        FROM public.complaints
+        WHERE status NOT IN ('Resolved', 'resolved', 'Closed', 'closed', 'Rejected', 'rejected')
+          AND "createdAt" <= (NOW() - INTERVAL '12 hours')
+          AND ("pushedTo" IS NULL OR "pushedTo" = '' OR "pushedTo" = 'categoryOfficer')
+    LOOP
+        UPDATE public.complaints
+        SET "isPushed" = TRUE,
+            "pushedTo" = 'wardAdmin',
+            priority = 'high'
+        WHERE id = rec.id;
+
+        -- Create escalation history
+        INSERT INTO public.escalation_history (complaint_id, from_role, to_role, reason)
+        VALUES (rec.id, 'categoryOfficer', 'wardAdmin', 'Auto-escalated due to 12-hour SLA breach');
+
+        -- Create notification for all ward admins
+        FOR role_user_id IN SELECT id FROM public.users WHERE role = 'wardAdmin' LOOP
+            INSERT INTO public.notifications (id, "userId", title, body, "complaintId", type, notification_type, reference_id, "isRead", "createdAt")
+            VALUES ('notif_' || substring(md5(random()::text), 1, 8), role_user_id, 'Complaint Escalated', 'Complaint ' || substring(rec.id, 1, 8) || ' has been automatically escalated to your queue.', rec.id, 'complaint', 'complaint', rec.id, FALSE, NOW());
+        END LOOP;
+    END LOOP;
+
+    -- 2. Level 2: Ward Member -> Mandal Officer (unresolved > 24h)
+    FOR rec IN 
+        SELECT id, category, "createdAt"
+        FROM public.complaints
+        WHERE status NOT IN ('Resolved', 'resolved', 'Closed', 'closed', 'Rejected', 'rejected')
+          AND "createdAt" <= (NOW() - INTERVAL '24 hours')
+          AND "pushedTo" = 'wardAdmin'
+    LOOP
+        UPDATE public.complaints
+        SET "isPushed" = TRUE,
+            "pushedTo" = 'mandalOfficer',
+            priority = 'high'
+        WHERE id = rec.id;
+
+        -- Create escalation history
+        INSERT INTO public.escalation_history (complaint_id, from_role, to_role, reason)
+        VALUES (rec.id, 'wardAdmin', 'mandalOfficer', 'Auto-escalated due to 24-hour SLA breach');
+
+        -- Create notification for all mandal officers
+        FOR role_user_id IN SELECT id FROM public.users WHERE role = 'mandalOfficer' LOOP
+            INSERT INTO public.notifications (id, "userId", title, body, "complaintId", type, notification_type, reference_id, "isRead", "createdAt")
+            VALUES ('notif_' || substring(md5(random()::text), 1, 8), role_user_id, 'Complaint Escalated', 'Complaint ' || substring(rec.id, 1, 8) || ' has been automatically escalated to your queue.', rec.id, 'complaint', 'complaint', rec.id, FALSE, NOW());
+        END LOOP;
+    END LOOP;
+
+    -- 3. Level 3: Mandal Officer -> MLA / Super Admin (unresolved > 36h)
+    FOR rec IN 
+        SELECT id, category, "createdAt"
+        FROM public.complaints
+        WHERE status NOT IN ('Resolved', 'resolved', 'Closed', 'closed', 'Rejected', 'rejected')
+          AND "createdAt" <= (NOW() - INTERVAL '36 hours')
+          AND "pushedTo" = 'mandalOfficer'
+    LOOP
+        UPDATE public.complaints
+        SET "isPushed" = TRUE,
+            "pushedTo" = 'superAdmin',
+            priority = 'high'
+        WHERE id = rec.id;
+
+        -- Create escalation history
+        INSERT INTO public.escalation_history (complaint_id, from_role, to_role, reason)
+        VALUES (rec.id, 'mandalOfficer', 'superAdmin', 'Auto-escalated due to 36-hour SLA breach');
+
+        -- Create notification for all super admins / MLA
+        FOR role_user_id IN SELECT id FROM public.users WHERE role = 'superAdmin' LOOP
+            INSERT INTO public.notifications (id, "userId", title, body, "complaintId", type, notification_type, reference_id, "isRead", "createdAt")
+            VALUES ('notif_' || substring(md5(random()::text), 1, 8), role_user_id, 'Complaint Escalated', 'Complaint ' || substring(rec.id, 1, 8) || ' has been automatically escalated to your queue.', rec.id, 'complaint', 'complaint', rec.id, FALSE, NOW());
+        END LOOP;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Reload the schema cache so Supabase recognizes the new columns and functions immediately
 NOTIFY pgrst, 'reload schema';
+
+-- ==========================================
+-- ELECTION RESULTS TABLE
+-- ==========================================
+CREATE TABLE IF NOT EXISTS public.election_results (
+    id TEXT PRIMARY KEY,
+    constituency_name TEXT NOT NULL DEFAULT '8-Rajahmundry Parliamentary Constituency',
+    assembly_segment TEXT NOT NULL,
+    assembly_segment_code TEXT,
+    serial_number INT NOT NULL,
+    polling_station_number INT NOT NULL,
+    ganeswara_rao_paramata INT DEFAULT 0,
+    gidugu_rudraraju INT DEFAULT 0,
+    dr_guduri_srinivas INT DEFAULT 0,
+    daggubati_purandheshwari INT DEFAULT 0,
+    battula_balarama_krishna INT DEFAULT 0,
+    meda_srinivasa_rao INT DEFAULT 0,
+    mohana_rao_singuluri INT DEFAULT 0,
+    jalli_bala_naveena INT DEFAULT 0,
+    bommanaboina_vsr_murthy INT DEFAULT 0,
+    bhanu_chandar_kuruvella INT DEFAULT 0,
+    dr_medisi_ratnarao_alias_vinay INT DEFAULT 0,
+    salopantula_raghavendra_rao INT DEFAULT 0,
+    total_valid_votes INT DEFAULT 0,
+    rejected_votes INT DEFAULT 0,
+    nota INT DEFAULT 0,
+    total_votes INT DEFAULT 0,
+    tendered_votes INT DEFAULT 0,
+    candidate_votes JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.election_results ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "election_results_open_access" ON public.election_results;
+CREATE POLICY "election_results_open_access" ON public.election_results FOR ALL USING (true) WITH CHECK (true);
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.election_results;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END;
+$$;
+
+

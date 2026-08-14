@@ -1704,6 +1704,7 @@ class _VoiceDictationSheetState extends State<_VoiceDictationSheet> with SingleT
   Timer? _timer;
   int _secondsElapsed = 0;
   bool _isActionInProgress = false;
+  DateTime? _recordingStartTime;   // Used to enforce minimum recording duration
 
   @override
   void initState() {
@@ -1796,11 +1797,21 @@ class _VoiceDictationSheetState extends State<_VoiceDictationSheet> with SingleT
 
       const config = RecordConfig(
         encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc,
-        sampleRate: 44100,
+        sampleRate: 48000,
+        numChannels: 1,
+        bitRate: 128000,
       );
 
       await _audioRecorder.start(config, path: '');
       debugPrint('[VoiceSTT] Recording started');
+
+      // Allow 300ms for the browser mic to warm up before we start the timer.
+      // This prevents the first 300ms of silence from being included in the
+      // audio data that Whisper receives.
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Record the start time AFTER warmup — used to enforce minimum duration
+      _recordingStartTime = DateTime.now();
 
       if (mounted) {
         setState(() {
@@ -1829,6 +1840,31 @@ class _VoiceDictationSheetState extends State<_VoiceDictationSheet> with SingleT
     if (_isActionInProgress) return;
     _isActionInProgress = true;
     _stopTimer();
+
+    // ── Minimum 2-second recording guard ─────────────────────────────────────
+    // Whisper needs at least 2 seconds of real speech to produce a meaningful
+    // transcript. If the user stops too quickly, show a helpful message instead
+    // of sending garbage audio that causes the server to return an error.
+    final elapsed = _recordingStartTime == null
+        ? 0
+        : DateTime.now().difference(_recordingStartTime!).inMilliseconds;
+
+    if (elapsed < 2000) {
+      debugPrint('[VoiceSTT] Recording stopped too early (${elapsed}ms). Minimum is 2000ms.');
+      try {
+        if (await _audioRecorder.isRecording()) await _audioRecorder.stop();
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _state = DictationState.error;
+          _errorMessage = widget.isTeluguInitially
+              ? 'చాలా తక్కువ సమయం మాట్లాడారు. దయచేసి 🔴 బటన్ నొక్కి కనీసం 2 సెకన్లు మాట్లాడండి.'
+              : 'Too short! Tap 🔴 and speak for at least 2 seconds.';
+        });
+      }
+      _isActionInProgress = false;
+      return;
+    }
 
     if (mounted) {
       setState(() {
@@ -1872,14 +1908,14 @@ class _VoiceDictationSheetState extends State<_VoiceDictationSheet> with SingleT
       debugPrint('[VoiceSTT] Audio bytes: ${audioBytes.length}');
       debugPrint('[VoiceSTT] MIME: audio/webm');
 
-      if (audioBytes.length < 800) {
-        debugPrint('[VoiceSTT] ERROR: Audio bytes < 800 (silent/too short)');
+      if (audioBytes.length < 1200) {
+        debugPrint('[VoiceSTT] ERROR: Audio bytes < 1200 (silent/too short: ${audioBytes.length} bytes)');
         if (mounted) {
           setState(() {
             _state = DictationState.error;
             _errorMessage = widget.isTeluguInitially
-                ? 'మాట్లాడటం చాలా తక్కువగా ఉంది. దయచేసి స్పష్టంగా మాట్లాడండి.'
-                : 'No speech detected. Please speak again.';
+                ? 'రికార్డింగ్ చాలా తక్కువగా ఉంది. దయచేసి మైక్ నొక్కి కనీసం 2 సెకన్ల పాటు స్పష్టంగా మాట్లాడండి.'
+                : 'Recording was too short. Please tap the mic and speak clearly for at least 2 seconds.';
           });
         }
         return;
@@ -1918,14 +1954,37 @@ class _VoiceDictationSheetState extends State<_VoiceDictationSheet> with SingleT
             }
           });
         } else {
+          // Map server-internal error messages to user-friendly text
           final String rawErr = (whisperResult['error'] ?? '').toString();
+          final bool isTelugu = widget.isTeluguInitially;
+          String friendlyError;
+
+          if (rawErr.contains('unreachable') || rawErr.contains('OPENAI_API_KEY') || rawErr.contains('server')) {
+            // Server connectivity error
+            friendlyError = isTelugu
+                ? 'వాయిస్ సర్వర్ అందుబాటులో లేదు. దయచేసి Wi-Fi తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.'
+                : 'Voice server is temporarily unavailable. Please check your connection and try again.';
+          } else if (rawErr.contains('recognized') || rawErr.contains('speak') || rawErr.contains('Muted') || rawErr.contains('muted')) {
+            // No speech / silent audio
+            friendlyError = isTelugu
+                ? 'మాట్లాడటం వినిపించలేదు. దయచేసి మైక్ నొక్కి స్పష్టంగా మాట్లాడండి.'
+                : 'No speech detected. Please tap mic and speak clearly.';
+          } else if (rawErr.contains('too large') || rawErr.contains('413')) {
+            friendlyError = isTelugu
+                ? 'ఆడియో ఫైల్ చాలా పెద్దది. దయచేసి తక్కువ సేపు మాట్లాడండి.'
+                : 'Audio too large. Please record a shorter clip.';
+          } else if (rawErr.isNotEmpty) {
+            // Pass through any other specific message from the server
+            friendlyError = rawErr;
+          } else {
+            friendlyError = isTelugu
+                ? 'వాయిస్ రికగ్నిషన్ లభ్యం కాలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.'
+                : 'Speech transcription failed. Please try again.';
+          }
+
           setState(() {
             _state = DictationState.error;
-            _errorMessage = rawErr.isNotEmpty
-                ? rawErr
-                : (widget.isTeluguInitially
-                    ? 'వాయిస్ రికగ్నిషన్ లభ్యం కాలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.'
-                    : 'Speech transcription is temporarily unavailable. Please try again.');
+            _errorMessage = friendlyError;
           });
         }
       }
@@ -2227,7 +2286,7 @@ class _VoiceDictationSheetState extends State<_VoiceDictationSheet> with SingleT
                     ),
                   ] else if (_state == DictationState.processing) ...[
                     Text(
-                      isTeluguUI ? 'గూగుల్ జెమిని AI ద్వారా వాయిస్ గ్రహించబడుతోంది...' : 'Understanding your voice with Gemini AI...',
+                      isTeluguUI ? 'AI వాయిస్ ప్రాసెసింగ్ జరుగుతోంది...' : 'Processing speech with AI...',
                       style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 13, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
